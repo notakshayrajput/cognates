@@ -1,0 +1,12 @@
+node_modules/*
+dist/
+Test Environment/*
+.DS_Store
+.env
+.log
+coverage/
+.vscode/
+.idea/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log
