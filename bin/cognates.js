@@ -6,9 +6,8 @@ import { startCommand } from "../commands/start.js";
 
 program
   .command("setup")
-  .description("Initialize Cognates configuration")
+  .description("Setup Cognates in your app.")
   .action(() => {
-    console.log("Executing setup...");
     setupCommand();
   });
 
@@ -16,7 +15,6 @@ program
   .command("start")
   .description("Launch Cognates UI")
   .action(() => {
-    console.log("Executing start...");
     startCommand();
   });
 

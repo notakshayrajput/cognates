@@ -3,8 +3,15 @@
   "version": "1.0.0",
   "description": "Cognates is a lightweight and developer-friendly npm package for localizing strings in React applications. It simplifies internationalization (i18n) by providing an easy-to-use API for managing translations, supporting multiple languages, and enhancing user experience with seamless locale switching.",
   "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js"
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "testEnv": "cd \"Test Environment\" && npm run dev",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
@@ -39,6 +46,7 @@
     "eslint-plugin-react": "^7.37.4",
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.5.2",
+    "typescript": "^5.7.3",
     "vite": "^6.2.0"
   }
 }
