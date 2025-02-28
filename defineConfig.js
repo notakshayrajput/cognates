@@ -3,7 +3,7 @@ export function defineConfig(userConfig = {}) {
       defaultLanguage: 'en',
       autoDetectLanguage: true,
       source: 'src',
-      serverPort: 2410,
+      port: 2410,
       localeDir: '/cognates',
       excludePaths: ['/assets/*', '*.js'],
     };

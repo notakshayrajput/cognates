@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pathToFileURL, fileURLToPath } from 'url'
 import readline from 'readline'
+import { getConfigAsync,getConfigPath,loadConfigAsync,detectModule } from '../lib/util.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -12,14 +13,13 @@ const defaultConfig = {
   defaultLanguage: 'en',
   autoDetectLanguage: true,
   source: 'src',
-  serverPort: 2410,
+  port: 2410,
   localeDir: 'cognates', // Ensure this is relative
   excludePaths: ['/assets/*', '*.js'],
 }
 
 export async function setupCommand() {
-  const appRoot = process.cwd();
-  const configPath = path.join(appRoot, 'cognates.config.js');
+  const configPath =getConfigPath();
 
   let isModule = detectModule();
 
@@ -40,7 +40,7 @@ export default defineConfig({
     defaultLanguage: "${defaultConfig.defaultLanguage}",
     autoDetectLanguage: ${defaultConfig.autoDetectLanguage},
     source: "${defaultConfig.source}",
-    serverPort: ${defaultConfig.serverPort},
+    port: ${defaultConfig.port},
     localeDir: "${defaultConfig.localeDir}",
     excludePaths: ${JSON.stringify(defaultConfig.excludePaths)},
 });
@@ -51,7 +51,7 @@ module.exports = defineConfig({
     defaultLanguage: "${defaultConfig.defaultLanguage}",
     autoDetectLanguage: ${defaultConfig.autoDetectLanguage},
     source: "${defaultConfig.source}",
-    serverPort: ${defaultConfig.serverPort},
+    port: ${defaultConfig.port},
     localeDir: "${defaultConfig.localeDir}",
     excludePaths: ${JSON.stringify(defaultConfig.excludePaths)},
 });
@@ -65,63 +65,23 @@ module.exports = defineConfig({
       }
 
       //  Only proceed after ensuring the config file exists
-      await continueSetup(configPath, appRoot, isModule);
+      await continueSetup();
     });
   } else {
     console.log('♻️ Cognates config already exists.');
-    await continueSetup(configPath, appRoot, isModule);
+    await continueSetup();
   }
 }
 
-async function continueSetup(configPath, appRoot, isModule) {
-  await loadConfig(configPath, isModule);
-  const config = await getConfig(configPath, isModule);
+async function continueSetup() {
+  await loadConfigAsync();
+  const config = await getConfigAsync();
   if (config) {
-    await setupLocaleFolder(config, appRoot);
+    await setupLocaleFolder(config);
   }
 }
-
-async function loadConfig(configPath, isModule) {
-  try {
-    if (isModule) {
-      const configUrl = pathToFileURL(configPath).href;
-      const config = (await import(configUrl)).default;
-      console.log('📄 Loaded Configuration:', config);
-    } else {
-      const config = require(configPath);
-      console.log('📄 Loaded Configuration:', config);
-    }
-  } catch (error) {
-    console.error('❌ Error loading config:', error);
-  }
-}
-
-function detectModule() {
-  try {
-    const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-    return packageJson.type === 'module';
-  } catch (err) {
-    console.warn('⚠️ Could not read package.json, assuming CommonJS');
-    return false;
-  }
-}
-
-async function getConfig(configPath, isModule) {
-  try {
-    if (isModule) {
-      const configUrl = pathToFileURL(configPath).href;
-      const config = (await import(configUrl)).default;
-      return config;
-    } else {
-      const config = require(configPath);
-      return config;
-    }
-  } catch (error) {
-    console.error('❌ Error loading config:', error);
-  }
-}
-
-async function setupLocaleFolder(config, appRoot) {
+async function setupLocaleFolder(config) {
+  const appRoot = process.cwd();
   const localeDir = path.join(appRoot, config.localeDir);
   const jsonFilePath = path.join(localeDir, `${config.defaultLanguage}.json`);
 
