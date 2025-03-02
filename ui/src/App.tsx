@@ -1,20 +1,19 @@
-import { useState } from 'react'
 import './App.css'
-import { ICognatesConfig } from './types'
+// import { ICognatesConfig } from './types'
+import { Route, Routes } from 'react-router-dom'
+import Home from './screens/home/Home'
+import About from './screens/about/About'
+import NotFound from './screens/notFound/NotFound'
+import Configure from './screens/configure/Configure'
 
 function App() {
-    const [config, setConfig] = useState({
-        languages: ['en'],
-    } as ICognatesConfig)
-
     return (
-        <div className="App">
-            <h1>Cognates Config Manager</h1>
-            <button onClick={() => setConfig({ languages: ['en', 'es'] })}>
-                Load Config
-            </button>
-            {config && <pre>{JSON.stringify(config, null, 2)}</pre>}
-        </div>
+        <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/configure" element={<Configure />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+        </Routes>
     )
 }
 

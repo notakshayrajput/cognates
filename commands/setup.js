@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { pathToFileURL, fileURLToPath } from 'url'
 import readline from 'readline'
-import { getConfigAsync,getConfigPath,loadConfigAsync,detectModule } from '../lib/util.js'
+import { getConfigAsync,getConfigPath,loadConfigAsync,detectModule,updateConfigAsync } from '../lib/util.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -12,10 +12,10 @@ const exampleConfigPath = path.join(packageFolder, "example", "cognates.config.j
 const defaultConfig = {
   defaultLanguage: 'en',
   autoDetectLanguage: true,
-  source: 'src',
+  source: 'src/',
   port: 2410,
-  localeDir: 'cognates', // Ensure this is relative
-  excludePaths: ['/assets/*', '*.js'],
+  localeDir: 'cognates/', // Ensure this is relative
+  excludePaths: ['/assets/*'],
 }
 
 export async function setupCommand() {
@@ -33,31 +33,7 @@ export async function setupCommand() {
       rl.close();
       
       if (answer.toLowerCase() === 'y' || answer === '') {
-        const configContent = isModule
-          ? `import { defineConfig } from 'cognates';
-
-export default defineConfig({
-    defaultLanguage: "${defaultConfig.defaultLanguage}",
-    autoDetectLanguage: ${defaultConfig.autoDetectLanguage},
-    source: "${defaultConfig.source}",
-    port: ${defaultConfig.port},
-    localeDir: "${defaultConfig.localeDir}",
-    excludePaths: ${JSON.stringify(defaultConfig.excludePaths)},
-});
-`
-          : `const { defineConfig } = require('cognates');
-
-module.exports = defineConfig({
-    defaultLanguage: "${defaultConfig.defaultLanguage}",
-    autoDetectLanguage: ${defaultConfig.autoDetectLanguage},
-    source: "${defaultConfig.source}",
-    port: ${defaultConfig.port},
-    localeDir: "${defaultConfig.localeDir}",
-    excludePaths: ${JSON.stringify(defaultConfig.excludePaths)},
-});
-`;
-
-        fs.writeFileSync(configPath, configContent);
+        await updateConfigAsync(defaultConfig);
         console.log(`✅ Created ${path.basename(configPath)}`);
       } else {
         console.log(`❌ No config file found. Please create one using the example at: ${exampleConfigPath}`);

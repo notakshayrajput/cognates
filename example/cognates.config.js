@@ -3,10 +3,10 @@ import { defineConfig } from 'cognates';
 export default defineConfig({
     defaultLanguage: 'en',
     autoDetectLanguage: true,
-    source: 'src',
+    source: 'src/',
     port: 2410,
-    localeDir: '/cognates',
-    excludePaths: ['/assets/*', '*.js'],
+    localeDir: '/cognates/',
+    excludePaths: ['/assets/*'],
 });
 /*
 For CommonJS:
@@ -18,6 +18,6 @@ module.exports = defineConfig({
     source: 'src',
     port: 2410,
     localeDir: '/cognates',
-    excludePaths: ['/assets/*', '*.js'],
+    excludePaths: ['/assets/*'],
 });
 */
