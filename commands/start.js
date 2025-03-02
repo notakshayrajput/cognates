@@ -10,11 +10,13 @@ const PORT = 2410;
 
 // Serve React UI
 app.use(express.static(path.join(__dirname, "../ui/dist")));
+// Middleware to parse JSON request body
+app.use(express.json());
+
 // API to update config with validation
 app.post("/api/config", async (req, res) => {
   try {
     const newConfig = req.body;
-    
     // Validation to ensure required fields are not empty
     if (!newConfig.defaultLanguage || typeof newConfig.defaultLanguage !== "string") {
       return res.status(400).json({ error: "Invalid or missing 'defaultLanguage' field" });
@@ -25,7 +27,8 @@ app.post("/api/config", async (req, res) => {
     if (!newConfig.source || typeof newConfig.source !== "string") {
       return res.status(400).json({ error: "Invalid or missing 'source' field" });
     }
-    if (!newConfig.port || typeof newConfig.port !== "number") {
+    newConfig.port = Number(newConfig.port);
+    if (isNaN(newConfig.port) || newConfig.port <= 0) {
       return res.status(400).json({ error: "Invalid or missing 'port' field" });
     }
     if (!newConfig.localeDir || typeof newConfig.localeDir !== "string") {
@@ -38,6 +41,7 @@ app.post("/api/config", async (req, res) => {
     await updateConfigAsync(newConfig);
     res.json({ success: true, message: "Configuration updated successfully" });
   } catch (error) {
+    console.log(error)
     res.status(500).json({ error: "Failed to update config" });
   }
 });

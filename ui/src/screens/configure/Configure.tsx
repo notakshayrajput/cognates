@@ -71,27 +71,35 @@ export default function Configure() {
     }));
   };
 
-  const handleSave = () => {
-    const requiredFields: (keyof ICognatesConfig)[] = ["defaultLanguage", "source", "port", "localeDir"];
-    const newErrors: Record<string, boolean> = {};
-    let hasError = false;
+  const handleSave = async (config: ICognatesConfig, setErrors: (errors: Record<string, boolean>) => void) => {
+    try {
+      const requiredFields: (keyof ICognatesConfig)[] = ["defaultLanguage", "source", "port", "localeDir"];
+      const newErrors: Record<string, boolean> = {};
+      let hasError = false;
   
-    requiredFields.forEach((field) => {
-      if (!config[field]) {
-        newErrors[field] = true;
-        hasError = true;
+      requiredFields.forEach((field) => {
+        if (!config[field]) {
+          newErrors[field] = true;
+          hasError = true;
+        }
+      });
+  
+      setErrors(newErrors);
+  
+      if (hasError) {
+        toast.error("Please fill in all required fields.");
+        return;
       }
-    });
   
-    setErrors(newErrors);
+      // Call API to update config
+      await ConfigService.getSingletonInstance().updateConfig(config);
   
-    if (hasError) {
-      toast.error("Please fill in all required fields.");
-      return;
+      toast.success("Configuration updated successfully!");
+      console.log("Configuration saved:", config);
+    } catch (error) {
+      console.error("Error updating config:", error);
+      toast.error("Failed to update configuration.");
     }
-  
-    console.log("Configuration saved:", config);
-    toast.success("Configuration saved successfully!");
   };
 
   // Description messages for each field
@@ -268,7 +276,7 @@ export default function Configure() {
           </CardContent>
         )}
           <CardFooter>
-            <Button onClick={handleSave} className="w-full">Save Changes</Button>
+            <Button onClick={() => handleSave(config, setErrors)} className="w-full">Save Changes</Button>
           </CardFooter>
         </Card>
 

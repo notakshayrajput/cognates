@@ -38,5 +38,17 @@ export class ConfigService {
       throw new Error("Failed to fetch language list.");
     }
   }
-  
+  public async updateConfig(newConfig: ICognatesConfig): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await HttpService.getSingletonInstance().post("/api/config", newConfig);
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response as { success: boolean; message: string };
+    } catch (error) {
+      console.error("Failed to update config:", error);
+      throw new Error("Failed to update configuration.");
+    }
+  }
+ 
 }
