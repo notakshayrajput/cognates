@@ -1,10 +1,10 @@
 import { useState, useEffect, ChangeEvent } from "react";
-import MainLayout from "../../layout/main-layout.css/MainLayout";
+import MainLayout from "../../layout/main-layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { ConfigService } from "@/services/config.service";
-import { ICognatesConfig, ILanguage } from "@/types";
+import { ICognatesConfig, ICultureInfo } from "@/types";
 import { cn } from "@/lib/utils"; 
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +19,7 @@ export default function Configure() {
     excludePaths: ['/assets/*'],
   });
 
-  const [languages, setLanguages] = useState<ILanguage[]>([]);
+  const [cultureList, setCultureList] = useState<ICultureInfo[]>([]);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,8 +32,8 @@ export default function Configure() {
           const configData = await configService.getConfig();
           setConfig(configData);  // No need for "error in configData" check
     
-          const languageList = await configService.getConfigList();
-          setLanguages(languageList);
+          const cultureInfoList = await configService.getCultureInfo();
+          setCultureList(cultureInfoList);
     
         } catch (error) {
           toast.error(error instanceof Error ? error.message : "Something went wrong.");
@@ -204,7 +204,7 @@ export default function Configure() {
             {/* Default Language */}
             <label className="block mb-2">Default Language:</label>
             <Combobox
-              options={languages.map((lang) => ({
+              options={cultureList.map((lang) => ({
                 label: `${lang.language}${lang.country ? ` (${lang.country})` : ""}`,
                 value: lang.code,
               }))}

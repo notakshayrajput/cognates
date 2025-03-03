@@ -9,8 +9,13 @@ export interface ICognatesConfig {
 export interface IError{
     error:string;
 }
-export interface ILanguage {
+export interface ICultureInfo {
     country?: string;
     language: string;
     code: string;
+  }
+  export interface ILocaleFileInfo{
+    fileName:string;
+    filePath:string;
+    cultureInfo?:ICultureInfo
   }

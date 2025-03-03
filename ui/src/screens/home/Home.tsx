@@ -1,4 +1,4 @@
-import MainLayout from "../../layout/main-layout.css/MainLayout";
+import MainLayout from "../../layout/main-layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Settings, Globe } from "lucide-react";
 export default function Home() {
   return (
     <MainLayout>
+      <div className="flex flex-col items-center  justify-center">
       <div className="flex flex-col items-center justify-center">
       <div className="text-center mb-6 pb-10">
           <h1 className="text-2xl font-bold">Welcome to Cognates</h1>
@@ -45,6 +46,7 @@ export default function Home() {
             </CardFooter>
           </Card>
         </div>
+      </div>
       </div>
     </MainLayout>
   );

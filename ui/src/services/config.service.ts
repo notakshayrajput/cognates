@@ -1,4 +1,4 @@
-import { ICognatesConfig,  ILanguage } from "@/types";
+import { ICognatesConfig,  ICultureInfo } from "@/types";
 import { HttpService } from "./http.service";
 
 export class ConfigService {
@@ -26,13 +26,13 @@ export class ConfigService {
     }
   }
   
-  public async getConfigList(): Promise<ILanguage[]> {
+  public async getCultureInfo(): Promise<ICultureInfo[]> {
     try {
-      const response = await HttpService.getSingletonInstance().get("/lang.json");
+      const response = await HttpService.getSingletonInstance().get("/api/cultureInfo");
       if (response.error) {
         throw new Error(response.error);
       }
-      return response as ILanguage[];
+      return response.cultureInfoList as ICultureInfo[];
     } catch (error) {
       console.error("Failed to fetch language list:", error);
       throw new Error("Failed to fetch language list.");
