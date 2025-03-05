@@ -47,7 +47,6 @@ app.post("/api/config", async (req, res) => {
     res.status(500).json({ error: "Failed to update config" });
   }
 });
-
 // API to get current config
 app.get("/api/config", async (req, res) => {
   try {
@@ -72,8 +71,8 @@ app.get("/api/locales", async (req, res) => {
     if (!fs.existsSync(localeDir)) {
       return res.status(404).json({ error: "Locale directory not found" });
     }
-
-    const files = fs.readdirSync(localeDir);
+    let files=[]
+    files = fs.readdirSync(localeDir);
     const jsonFiles = files.filter(file => file.endsWith(".json"));
 
     const result = jsonFiles.map(file => {
@@ -93,6 +92,84 @@ app.get("/api/locales", async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve locale files" });
   }
 });
+app.get("/api/locale/:filePath", async (req, res) => {
+  try {
+    const config = await getConfigAsync();
+    const filePath = path.join(config.localeDir, req.params.filePath);
+    
+    if (fs.existsSync(filePath)) {
+      return res.json(JSON.parse(fs.readFileSync(filePath, "utf8")));
+    }
+    
+    // If file does not exist, try default language
+    const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
+    if (fs.existsSync(defaultFilePath)) {
+      return res.json(JSON.parse(fs.readFileSync(defaultFilePath, "utf8")));
+    }
+    
+    return res.status(404).json({ error: "File not found" });
+  } catch (error) {
+    console.error("Failed to retrieve locale file:", error);
+    res.status(500).json({ error: "Failed to retrieve locale file" });
+  }
+});
+app.post("/api/locale/:filePath", async (req, res) => {
+  try {
+    const config = await getConfigAsync();
+    const { filePath } = req.params; // filePath 
+    const { code} = req.body; //code is culture code .//is ignored for now
+
+    if (!filePath || typeof filePath !== "string") {
+      return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
+    }
+    
+    const newFilePath = path.join(config.localeDir, `${filePath}.json`);
+
+    if (fs.existsSync(newFilePath)) {
+      return res.status(400).json({ error: "Locale file already exists" });
+    }
+
+    const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
+
+    if (!fs.existsSync(defaultFilePath)) {
+      return res.status(404).json({ error: "Default language file not found" });
+    }
+
+    // Read the default language JSON file
+    const defaultContent = JSON.parse(fs.readFileSync(defaultFilePath, "utf8"));
+
+    // Function to recursively replace values with undefined
+    const clearValues = (obj) => {
+      if (typeof obj === "object" && obj !== null) {
+        return Object.fromEntries(
+          Object.entries(obj).map(([key, value]) => [
+            key,
+            typeof value === "object" && value !== null ? clearValues(value) : undefined,
+          ])
+        );
+      }
+      return obj; // Return as is if not an object
+    };
+
+    const newLocaleData = {
+      //cultureInfo: {
+        //code: filePath,
+        //language: language || "",
+        //country: country || "",
+      //},
+      ...clearValues(defaultContent),
+    };
+
+    // Write the new locale file
+    fs.writeFileSync(newFilePath, JSON.stringify(newLocaleData, null, 2));
+
+    res.json({ success: true, message: `Locale file '${filePath}.json' created successfully` });
+  } catch (error) {
+    console.error("Failed to create locale file:", error);
+    res.status(500).json({ error: "Failed to create locale file" });
+  }
+});
+
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
 });

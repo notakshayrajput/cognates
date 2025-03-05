@@ -25,7 +25,7 @@ export class HttpService {
         }
         return data;
       } catch (error) {
-        return { error };
+        throw new Error(error instanceof Error ? error.message : "Network error");
       }
     }
   

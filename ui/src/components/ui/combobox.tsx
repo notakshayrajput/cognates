@@ -23,7 +23,8 @@ interface ComboboxProps {
     onChange: (value: string) => void
     onFocus?: () => void // Add onFocus prop
     placeholder?: string,
-    disabled?:boolean
+    disabled?:boolean,
+    className?:string
 }
 
 export function Combobox({
@@ -33,6 +34,7 @@ export function Combobox({
     onFocus, // Accept onFocus as a prop
     placeholder,
     disabled = false,
+    className
 }: ComboboxProps) {
     const [open, setOpen] = React.useState(false)
     const [searchTerm, setSearchTerm] = React.useState('')
@@ -66,7 +68,7 @@ export function Combobox({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between"
+                    className={`w-full justify-between ${className}`}
                     onClick={() => onFocus && onFocus()} 
                     disabled={disabled}
                 >
