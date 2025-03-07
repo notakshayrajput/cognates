@@ -11,6 +11,7 @@
     }
   },
   "scripts": {
+    "dev": "cd \"ui\" && npm run dev",
     "build": "cd \"ui\" && npm run build",
     "start": "cd \"Test Environment\" && npx cognates start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
@@ -32,6 +33,7 @@
   },
   "homepage": "https://github.com/notakshayrajput/cognates#readme",
   "dependencies": {
+    "@glideapps/glide-data-grid": "^6.0.3",
     "chalk": "^5.4.1",
     "commander": "^13.1.0",
     "express": "^4.21.2",
