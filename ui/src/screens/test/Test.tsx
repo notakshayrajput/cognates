@@ -1,87 +1,105 @@
-import { useState } from 'react'
+import React from "react";
+import LocalizeLayout from "../../layout/localize-layout/LocalizeLayout";
+import DataGridWrapper from "@/components/dataGrid/DataGridWrapper";
 import "@glideapps/glide-data-grid/dist/index.css";
-import LocalizeLayout from '../../layout/localize-layout/LocalizeLayout'
-import DataGridWrapper from '@/components/dataGrid/DataGridWrapper'
-import { DataEditor, GridCell, GridCellKind, GridColumn, Item } from '@glideapps/glide-data-grid'
-import React from 'react'
+import { ICultureInfo } from "@/types";
 
-interface DataRow {
-    name: string;
-    company: string;
-    email: string;
-    phone: string;
-}
+const initialData = {
+    btnSubmit: "Submit",
+    btnCancel: "Cancel",
+    btnDelete: "Delete",
+    btnSave: "Save",
+    btnLoadMore: "Load More",
+    myComponent: {
+      header1: "Component1",
+      description: "This is a Component Description.",
+      welcomeText: "Welcome, {0}!",
+      Section1: {
+        chartHeader: "Sales Data",
+        chartFooter: "Year",
+        filters: {
+          dateRange: "Date Range",
+          category: "Category",
+          region: "Region",
+        },
+        dataPoints: {
+          totalSales: "Total Sales",
+          totalRevenue: "Total Revenue",
+          growthPercentage: "{0}% Growth",
+        },
+      },
+      Section2: {
+        userList: {
+          title: "User List",
+          columns: {
+            name: "Name",
+            email: "Email",
+            status: "Status",
+            actions: "Actions",
+          },
+          statusOptions: {
+            active: "Active",
+            inactive: "Inactive",
+            pending: "Pending",
+          },
+        },
+      },
+    },
+    settings: {
+      general: {
+        language: "Language",
+        theme: "Theme",
+        notifications: {
+          enable: "Enable Notifications",
+          disable: "Disable Notifications",
+          email: "Email Notifications",
+          push: "Push Notifications",
+        },
+      },
+      privacy: {
+        dataCollection: "Allow Data Collection",
+        tracking: {
+          enable: "Enable Tracking",
+          disable: "Disable Tracking",
+          explanation: "We use tracking to improve user experience.",
+        },
+      },
+    },
+    dashboard: {
+      analytics: {
+        visitorStats: {
+          totalVisitors: "Total Visitors",
+          uniqueVisitors: "Unique Visitors",
+          avgSession: "Avg. Session Duration",
+        },
+        trafficSources: {
+          direct: "Direct",
+          referral: "Referral",
+          organicSearch: "Organic Search",
+          paidAds: "Paid Ads",
+        },
+      },
+      performance: {
+        cpuUsage: "CPU Usage: {0}%",
+        memoryUsage: "Memory Usage: {0}MB",
+        diskSpace: "Disk Space: {0}GB used",
+      },
+    },
+  };
+  
+
 export default function Localize() {
-    const data = [
-        {
-          "name": "Hines Fowler",
-          "company": "BUZZNESS",
-          "email": "hinesfowler@buzzness.com",
-          "phone": "+1 (869) 405-3127"
-        },
-        {
-          "name": "Hines Fowler",
-          "company": "BUZZNESS",
-          "email": "hinesfowler@buzzness.com",
-          "phone": "+1 (869) 405-3127"
-        },
-        {
-          "name": "Hines Fowler",
-          "company": "BUZZNESS",
-          "email": "hinesfowler@buzzness.com",
-          "phone": "+1 (869) 405-3127"
-        },
-        {
-          "name": "Hines Fowler",
-          "company": "BUZZNESS",
-          "email": "hinesfowler@buzzness.com",
-          "phone": "+1 (869) 405-3127"
-        },
-        {
-          "name": "Hines Fowler",
-          "company": "BUZZNESS",
-          "email": "hinesfowler@buzzness.com",
-          "phone": "+1 (869) 405-3127"
-        }
-    ]
-    const columns: GridColumn[] = [
-        {
-            title: "Name",
-            id: "name"
-        },
-        {
-            title: "Company",
-            id: "company"
-        },
-        {
-            title: "Email",
-            id: "email"
-        },
-        {
-            title: "Phone",
-            id: "phone"
-        }
-    ]
-    const getContent = React.useCallback((cell: Item): GridCell => {
-        const [col, row] = cell;
-        const dataRow = data[row];
-        // dumb but simple way to do this
-        const indexes: (keyof DataRow)[] = ["name", "company", "email", "phone"];
-        const d = dataRow[indexes[col]]
-        return {
-            kind: GridCellKind.Text,
-            allowOverlay: false,
-            displayData: d,
-            data: d,
-        };
-    }, []);
+    const culture:ICultureInfo={
+        code:"en",
+        language:"English"
+    }
+    const defaultCulture:ICultureInfo={
+        code:"en",
+        language:"English"
+    }
   return (
-      <LocalizeLayout>
-          <div>
-  <DataEditor getCellContent={getContent} columns={columns} rows={data.length} />
-</div>
-
-      </LocalizeLayout>
+    <LocalizeLayout>
+      <DataGridWrapper data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
+    </LocalizeLayout>
   );
 }
-
