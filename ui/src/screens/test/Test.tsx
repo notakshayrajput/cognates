@@ -62,7 +62,7 @@ const initialData = {
         tracking: {
           enable: "Enable Tracking",
           disable: "Disable Tracking",
-          explanation: "We use tracking to improve user experience.",
+          explanation: "We use tracking to improve user experience.We use tracking to improve user experience.We use tracking to improve user experience.We use tracking to improve user experience.\n We use tracking to improve user experience.We use tracking to improve user experience.We use tracking to improve user experience.",
         },
       },
     },
@@ -88,12 +88,56 @@ const initialData = {
     },
   };
   
+  const initialDataFR = {
+    btnSubmit: "Soumettre",
+    btnCancel: "Annuler",
+    btnDelete: "Supprimer",
+    btnSave: "Enregistrer",
+    btnLoadMore: "Charger plus",
+    myComponent: {
+      header1: "Composant1",
+      description: "Ceci est une description du composant.",
+      welcomeText: "Bienvenue, {0} !",
+      Section2: {
+        userList: {
+          title: "Liste des utilisateurs",
+          columns: {
+            name: "Nom",
+            email: "E-mail",
+            status: "Statut",
+            actions: "Actions",
+          },
+          statusOptions: {
+            active: "Actif",
+          },
+        },
+      },
+    },
+    settings: {
+      general: {
+        language: "Langue",
+        theme: "Thème",
+        notifications: {
+          enable: "Activer les notifications",
+          disable: "Désactiver les notifications",
+          email: "Notifications par e-mail",
+          push: "Notifications push",
+        },
+      },
+      privacy: {
+        tracking: {
+          explanation: "Nous utilisons le suivi pour améliorer l'expérience utilisateur.Nous utilisons le suivi pour améliorer l'expérience utilisateur.Nous utilisons le suivi pour améliorer l'expérience utilisateur.Nous utilisons le suivi pour améliorer l'expérience utilisateur.\nNous utilisons le suivi pour améliorer l'expérience utilisateur.",
+        },
+      },
+    },
+    
+};
 
 export default function Localize() {
     const { theme } = useTheme()
     const culture:ICultureInfo={
-        code:"en",
-        language:"English"
+        code:"fr",
+        language:"French"
     }
     const defaultCulture:ICultureInfo={
         code:"en",
@@ -119,7 +163,7 @@ export default function Localize() {
       const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
   return (
     <LocalizeLayout>
-      <DataGridWrapper theme={appliedTheme} height="400px" data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
+      <DataGridWrapper theme={appliedTheme} height="400px" data={initialDataFR} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
     </LocalizeLayout>
   );
 }
