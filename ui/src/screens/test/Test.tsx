@@ -3,6 +3,7 @@ import LocalizeLayout from "../../layout/localize-layout/LocalizeLayout";
 import DataGridWrapper from "@/components/dataGrid/DataGridWrapper";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { ICultureInfo } from "@/types";
+import { useTheme } from "../../components/theme-provider/theme-provider";
 
 const initialData = {
     btnSubmit: "Submit",
@@ -89,6 +90,7 @@ const initialData = {
   
 
 export default function Localize() {
+    const { theme } = useTheme()
     const culture:ICultureInfo={
         code:"en",
         language:"English"
@@ -97,9 +99,27 @@ export default function Localize() {
         code:"en",
         language:"English"
     }
+    const lightTheme = {
+        // bgCell: "oklch(0.98 0.00 106)", // Lightest background
+        textDark: "oklch(0.15 0.00 49)", // Dark text
+        textMedium: "oklch(0.37 0.01 68)", // Medium text
+        textLight: "oklch(0.92 0.00 49)", // Light text
+        headerBg: "oklch(0.87 0.00 56)", // Header background
+        rowBg: "oklch(0.97 0.00 106)", // Row background
+      };
+      
+      const darkTheme = {
+        bgCell: "oklch(0.15 0.00 49)", // Darkest background
+        textDark: "oklch(0.98 0.00 106)", // Light text
+        textMedium: "oklch(0.55 0.01 58)", // Medium text
+        textLight: "oklch(0.72 0.01 56)", // Light text
+        headerBg: "oklch(0.22 0.01 56)", // Header background
+        rowBg: "oklch(0.27 0.01 34)", // Row background
+      };
+      const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
   return (
     <LocalizeLayout>
-      <DataGridWrapper height="400px" data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
+      <DataGridWrapper theme={appliedTheme} height="400px" data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
     </LocalizeLayout>
   );
 }

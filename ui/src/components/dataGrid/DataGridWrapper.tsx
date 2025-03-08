@@ -18,6 +18,7 @@ interface DataGridWrapperProps {
   onUpdate: (updatedData: Record<string, any>) => void;
   culture: ICultureInfo;
   defaultCulture: ICultureInfo;
+  theme:any;
 }
 
 const flattenData = (data: Record<string, any>, parentKey = "", depth = 0, collapsedState: Record<string, boolean> = {}): GridRow[] => {
@@ -34,7 +35,7 @@ const flattenData = (data: Record<string, any>, parentKey = "", depth = 0, colla
   return result;
 };
 
-const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdate, culture, defaultCulture }) => {
+const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdate, culture, defaultCulture, theme={} }) => {
   const [collapsedState, setCollapsedState] = useState<Record<string, boolean>>({});
   const [gridData, setGridData] = useState<GridRow[]>(flattenData(data, "", 0, collapsedState));
 
@@ -197,12 +198,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
       copyData: rowData.value ?? "",
     };
   }}
-  theme={{
-    baseFontStyle: "14px Arial",
-    cellHorizontalPadding: 10, // Base padding
-    headerFontStyle: "bold 14px Arial",
-    bgHeader: "#f5f5f5",
-  }}
+  theme={theme}
   rowMarkers={"none"}
   headerHeight={32}
   rowHeight={28} // Adjust row height for better spacing
