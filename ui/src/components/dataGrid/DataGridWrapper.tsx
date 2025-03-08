@@ -175,11 +175,15 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
 
     if (col === 0) {
       const displayKey = rowData.key.split(".").pop() || rowData.key;
+      const prefix = rowData.isGroup ? (rowData.collapsed ? "▶ " : "▼ ") : "   ";
 
       return {
         kind: GridCellKind.Text,
-        data: displayKey,
-        displayData: displayKey,
+        // data: displayKey,
+        // displayData: displayKey,
+
+      data: `${prefix}${displayKey}`,
+      displayData: `${prefix}${displayKey}`,
         allowOverlay: culture.code === defaultCulture.code && !rowData.isGroup,
         copyData: displayKey,
       };
