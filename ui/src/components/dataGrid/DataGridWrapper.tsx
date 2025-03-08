@@ -66,16 +66,36 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
   };
   const updateNestedKey = (obj: Record<string, any>, oldKeyPath: string, newKeyPath: string) => {
     const keys = oldKeyPath.split(".");
+    const parentKeys = keys.slice(0, -1);
+    const newKey = newKeyPath.split(".").pop()!;
+  
     let current = obj;
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) return obj;
-      current = current[keys[i]];
+    for (let i = 0; i < parentKeys.length; i++) {
+      if (!current[parentKeys[i]]) return obj;
+      current = current[parentKeys[i]];
     }
-    const value = current[keys[keys.length - 1]];
-    delete current[keys[keys.length - 1]];
-    current[newKeyPath.split(".").pop()!] = value;
-    return { ...obj }; // Return new object for reactivity
+  
+    // Create a new ordered object
+    const newObj: Record<string, any> = {};
+    Object.keys(current).forEach((key) => {
+      if (key === keys[keys.length - 1]) {
+        newObj[newKey] = current[key]; // Move the renamed key in place
+      } else {
+        newObj[key] = current[key]; // Keep everything else in order
+      }
+    });
+  
+    // Apply the updated object
+    parentKeys.reduce((acc, key, index) => {
+      if (index === parentKeys.length - 1) {
+        acc[key] = newObj;
+      }
+      return acc[key];
+    }, obj);
+  
+    return { ...obj }; // Return a new object for reactivity
   };
+  
   
   const updateNestedValue = (obj: Record<string, any>, keyPath: string, newValue: string | null) => {
     const keys = keyPath.split(".");
