@@ -33,7 +33,7 @@ const flattenData = (data: Record<string, any>, parentKey = "", depth = 0, colla
   return result;
 };
 
-const DataGridWrapper: React.FC<DataGridWrapperProps> = ({  height, data, onUpdate, culture, defaultCulture  }) => {
+const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdate, culture, defaultCulture }) => {
   const [collapsedState, setCollapsedState] = useState<Record<string, boolean>>({});
   const [gridData, setGridData] = useState<GridRow[]>(flattenData(data, "", 0, collapsedState));
   const [visibleRows, setVisibleRows] = useState<GridRow[]>([]);
@@ -106,12 +106,13 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({  height, data, onUpda
 
         if (col === 0) {
           const indent = "\u00A0".repeat(rowData.depth * 4);
+          const displayKey = rowData.key.split(".").pop() || rowData.key; // Extract only the last part of the key
           return {
             kind: GridCellKind.Text,
-            data: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${rowData.key}` : `${indent}${rowData.key}`,
-            displayData: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${rowData.key}` : `${indent}${rowData.key}`,
+            data: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
+            displayData: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
             allowOverlay: false,
-            copyData: rowData.key,
+            copyData: displayKey,
           };
         }
 
