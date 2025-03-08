@@ -99,7 +99,7 @@ export default function Localize() {
     }
   return (
     <LocalizeLayout>
-      <DataGridWrapper data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
+      <DataGridWrapper height="400px" data={initialData} defaultCulture={defaultCulture} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
     </LocalizeLayout>
   );
 }

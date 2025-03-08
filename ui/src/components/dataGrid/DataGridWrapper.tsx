@@ -36,33 +36,25 @@ const flattenData = (data: Record<string, any>, parentKey = "", depth = 0, colla
 const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdate, culture, defaultCulture }) => {
   const [collapsedState, setCollapsedState] = useState<Record<string, boolean>>({});
   const [gridData, setGridData] = useState<GridRow[]>(flattenData(data, "", 0, collapsedState));
-  const [visibleRows, setVisibleRows] = useState<GridRow[]>([]);
 
   useEffect(() => {
-    setVisibleRows(getVisibleRows(gridData));
-  }, [gridData, collapsedState]);
+    setGridData(flattenData(data, "", 0, collapsedState));
+  }, [data, collapsedState]);
 
   const toggleGroup = (groupKey: string) => {
     setCollapsedState((prev) => ({
       ...prev,
       [groupKey]: !prev[groupKey],
     }));
-    setGridData((prev) =>
-      prev.map((row) =>
-        row.key === groupKey ? { ...row, collapsed: !row.collapsed } : row
-      )
-    );
   };
 
-  const getVisibleRows = (data: GridRow[]): GridRow[] => {
+  const getVisibleRows = (): GridRow[] => {
     const visible: GridRow[] = [];
     const collapsedGroups = new Set<string>();
 
-    data.forEach((row) => {
+    gridData.forEach((row) => {
       for (let key of collapsedGroups) {
-        if (row.key.startsWith(key + ".")) {
-          return;
-        }
+        if (row.key.startsWith(key + ".")) return;
       }
       if (row.isGroup && row.collapsed) {
         collapsedGroups.add(row.key);
@@ -72,19 +64,71 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
 
     return visible;
   };
-
+  const updateNestedKey = (obj: Record<string, any>, oldKeyPath: string, newKeyPath: string) => {
+    const keys = oldKeyPath.split(".");
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) return obj;
+      current = current[keys[i]];
+    }
+    const value = current[keys[keys.length - 1]];
+    delete current[keys[keys.length - 1]];
+    current[newKeyPath.split(".").pop()!] = value;
+    return { ...obj }; // Return new object for reactivity
+  };
+  
+  const updateNestedValue = (obj: Record<string, any>, keyPath: string, newValue: string | null) => {
+    const keys = keyPath.split(".");
+    let current = obj;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) return obj;
+      current = current[keys[i]];
+    }
+    current[keys[keys.length - 1]] = newValue;
+    return { ...obj }; // Return new object for reactivity
+  };
+  
   const onCellEdited = (cell: Item, newValue: EditableGridCell) => {
     const [col, row] = cell;
+  
     setGridData((prev) => {
       const updatedData = [...prev];
-      if (col === 0 && culture.code === defaultCulture.code && !updatedData[row].isGroup) {
-        updatedData[row].key = (newValue as { data: string }).data;
-      } else if (col === 1) {
-        updatedData[row].value = (newValue as { data: string }).data;
+      const rowData = updatedData[row];
+  
+      if (!rowData) return prev;
+  
+      if (col === 0 && culture.code === defaultCulture.code && !rowData.isGroup) {
+        // Editing the Key
+        const newKeySegment = (newValue as { data: string }).data.trim();
+        const keyParts = rowData.key.split(".");
+        keyParts[keyParts.length - 1] = newKeySegment;
+        const newKey = keyParts.join(".");
+  
+        // Update the key in the existing row
+        updatedData[row] = { ...rowData, key: newKey };
+  
+        // Update the nested object & keep previous state
+        const newStructuredData = updateNestedKey(data, rowData.key, newKey);
+        onUpdate(newStructuredData);
+  
+        return updatedData; // Instead of regenerating `gridData`, update in-place
       }
+  
+      if (col === 1) {
+        // Editing the Value
+        updatedData[row] = { ...rowData, value: (newValue as { data: string }).data };
+  
+        // Update the original data structure
+        const newStructuredData = updateNestedValue(data, rowData.key, updatedData[row].value);
+        onUpdate(newStructuredData);
+  
+        return updatedData; // Keep current state to prevent re-renders breaking edits
+      }
+  
       return updatedData;
     });
   };
+  
 
   const columns: GridColumn[] = [
     { title: "Key", id: "key", width: 250 },
@@ -97,7 +141,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
       columns={columns}
       getCellContent={(cell: Item): GridCell => {
         const [col, row] = cell;
-        const rowData = visibleRows[row];
+        const rowData = getVisibleRows()[row];
 
         if (!rowData) {
           return {
@@ -109,8 +153,9 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
         }
 
         if (col === 0) {
-          const indent = "\u00A0".repeat(rowData.depth * 4);
-          const displayKey = rowData.key.split(".").pop() || rowData.key; // Extract only the last part of the key
+          const indent = " ".repeat(rowData.depth * 4); // Keeps indentation static
+          const displayKey = rowData.key.split(".").pop() || rowData.key;
+
           return {
             kind: GridCellKind.Text,
             data: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
@@ -129,10 +174,10 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
         };
       }}
       onCellEdited={onCellEdited}
-      rows={visibleRows.length}
-      onCellClicked={(item, event) => {
+      rows={getVisibleRows().length}
+      onCellClicked={(item) => {
         const [, row] = item;
-        const rowData = visibleRows[row];
+        const rowData = getVisibleRows()[row];
         if (rowData?.isGroup) {
           toggleGroup(rowData.key);
         }
