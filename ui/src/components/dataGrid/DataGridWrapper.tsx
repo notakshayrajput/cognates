@@ -74,10 +74,14 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
   };
 
   const onCellEdited = (cell: Item, newValue: EditableGridCell) => {
-    const [, row] = cell;
+    const [col, row] = cell;
     setGridData((prev) => {
       const updatedData = [...prev];
-      updatedData[row].value = (newValue as { data: string }).data;
+      if (col === 0 && culture.code === defaultCulture.code && !updatedData[row].isGroup) {
+        updatedData[row].key = (newValue as { data: string }).data;
+      } else if (col === 1) {
+        updatedData[row].value = (newValue as { data: string }).data;
+      }
       return updatedData;
     });
   };
@@ -111,7 +115,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
             kind: GridCellKind.Text,
             data: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
             displayData: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
-            allowOverlay: false,
+            allowOverlay: culture.code === defaultCulture.code && !rowData.isGroup,
             copyData: displayKey,
           };
         }
