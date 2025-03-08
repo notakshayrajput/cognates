@@ -168,63 +168,6 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
         current[keys[keys.length - 1]] = newValue
         return { ...obj } // Return new object for reactivity
     }
-
-    const onCellEdited = (cell: Item, newValue: EditableGridCell) => {
-        const [col, row] = cell
-
-        setGridData((prev) => {
-            const updatedData = [...prev]
-            const rowData = updatedData[row]
-
-            if (!rowData) return prev
-
-            if (
-                col === 0 &&
-                culture.code === defaultCulture.code &&
-                !rowData.isGroup
-            ) {
-                // Editing the Key
-                const newKeySegment = (newValue as { data: string }).data.trim()
-                const keyParts = rowData.key.split('.')
-                keyParts[keyParts.length - 1] = newKeySegment
-                const newKey = keyParts.join('.')
-
-                // Update the key in the existing row
-                updatedData[row] = { ...rowData, key: newKey }
-
-                // Update the nested object & keep previous state
-                const newStructuredData = updateNestedKey(
-                    data,
-                    rowData.key,
-                    newKey,
-                )
-                onUpdate(newStructuredData)
-
-                return updatedData // Instead of regenerating `gridData`, update in-place
-            }
-
-            if (col === 1) {
-                // Editing the Value
-                updatedData[row] = {
-                    ...rowData,
-                    value: (newValue as { data: string }).data,
-                }
-
-                // Update the original data structure
-                const newStructuredData = updateNestedValue(
-                    data,
-                    rowData.key,
-                    updatedData[row].value,
-                )
-                onUpdate(newStructuredData)
-
-                return updatedData // Keep current state to prevent re-renders breaking edits
-            }
-
-            return updatedData
-        })
-    }
-
     const columns: GridColumn[] = [
         { title: 'Key', id: 'key', width: 250 },
         { title: 'Value', id: 'value', width: 400 },
@@ -368,7 +311,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                   setGridData((prev) => {
                       const updatedData = [...prev];
           
-                      console.log("Set GridData", row);
+                      console.log("Set GridData", row,col);
                       updatedData[row] = {
                           ...rowData,
                           value: newValueText,
@@ -384,7 +327,6 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                       // Update the structured data with the new value
                       newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText);
                       onUpdate(newStructuredData);
-          
                       return updatedData;
                   });
               }

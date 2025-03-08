@@ -136,8 +136,8 @@ const initialData = {
 export default function Localize() {
     const { theme } = useTheme()
     const culture:ICultureInfo={
-        code:"fr",
-        language:"French"
+        code:"en",
+        language:"English"
     }
     const defaultCulture:ICultureInfo={
         code:"en",
