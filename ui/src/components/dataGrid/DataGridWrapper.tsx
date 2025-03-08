@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "@glideapps/glide-data-grid/dist/index.css";
 import DataEditor, { EditableGridCell, GridCellKind, GridColumn, Item, GridCell } from "@glideapps/glide-data-grid";
 import { ICultureInfo } from "@/types";
+import { ChevronRight, ChevronDown } from "lucide-react";
 
 interface GridRow {
   key: string;
@@ -157,52 +158,65 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({ height, data, onUpdat
 
   return (
     <DataEditor
-      height={height}
-      columns={columns}
-      getCellContent={(cell: Item): GridCell => {
-        const [col, row] = cell;
-        const rowData = getVisibleRows()[row];
+  height={height}
+  columns={columns}
+  getCellContent={(cell: Item): GridCell => {
+    const [col, row] = cell;
+    const rowData = getVisibleRows()[row];
 
-        if (!rowData) {
-          return {
-            kind: GridCellKind.Text,
-            data: "",
-            displayData: "",
-            allowOverlay: true,
-          };
-        }
+    if (!rowData) {
+      return {
+        kind: GridCellKind.Text,
+        data: "",
+        displayData: "",
+        allowOverlay: true,
+      };
+    }
 
-        if (col === 0) {
-          const indent = " ".repeat(rowData.depth * 4); // Keeps indentation static
-          const displayKey = rowData.key.split(".").pop() || rowData.key;
+    if (col === 0) {
+      const displayKey = rowData.key.split(".").pop() || rowData.key;
 
-          return {
-            kind: GridCellKind.Text,
-            data: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
-            displayData: rowData.isGroup ? `${indent}${rowData.collapsed ? "▶" : "▼"} ${displayKey}` : `${indent}${displayKey}`,
-            allowOverlay: culture.code === defaultCulture.code && !rowData.isGroup,
-            copyData: displayKey,
-          };
-        }
+      return {
+        kind: GridCellKind.Text,
+        data: displayKey,
+        displayData: displayKey,
+        allowOverlay: culture.code === defaultCulture.code && !rowData.isGroup,
+        copyData: displayKey,
+      };
+    }
 
-        return {
-          kind: GridCellKind.Text,
-          data: rowData.value ?? "",
-          displayData: rowData.value ?? "",
-          allowOverlay: true,
-          copyData: rowData.value ?? "",
-        };
-      }}
-      onCellEdited={onCellEdited}
-      rows={getVisibleRows().length}
-      onCellClicked={(item) => {
-        const [, row] = item;
-        const rowData = getVisibleRows()[row];
-        if (rowData?.isGroup) {
-          toggleGroup(rowData.key);
-        }
-      }}
-    />
+    return {
+      kind: GridCellKind.Text,
+      data: rowData.value ?? "",
+      displayData: rowData.value ?? "",
+      allowOverlay: true,
+      copyData: rowData.value ?? "",
+    };
+  }}
+  theme={{
+    baseFontStyle: "14px Arial",
+    cellHorizontalPadding: 10, // Base padding
+    headerFontStyle: "bold 14px Arial",
+    bgHeader: "#f5f5f5",
+  }}
+  rowMarkers={"none"}
+  headerHeight={32}
+  rowHeight={28} // Adjust row height for better spacing
+  getRowThemeOverride={(row) => {
+    const rowData = getVisibleRows()[row];
+    return rowData ? { cellHorizontalPadding: 10 + rowData.depth * 15 } : {};
+  }}
+  onCellEdited={onCellEdited}
+  rows={getVisibleRows().length}
+  onCellClicked={(item) => {
+    const [, row] = item;
+    const rowData = getVisibleRows()[row];
+    if (rowData?.isGroup) {
+      toggleGroup(rowData.key);
+    }
+  }}
+/>
+
   );
 };
 
