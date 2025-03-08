@@ -7,7 +7,6 @@ import DataEditor, {
     Item,
     GridCell,
 } from '@glideapps/glide-data-grid'
-import { ICultureInfo } from '@/types'
 
 interface GridRow {
     key: string
@@ -19,10 +18,11 @@ interface GridRow {
 
 interface DataGridWrapperProps {
     height?: string | number
+    width?: string | number
     data: Record<string, any>
-    onUpdate: (updatedData: Record<string, any>,defaultData: Record<string, any>) => void
-    culture: ICultureInfo
-    defaultCulture: ICultureInfo
+    onUpdate: (culure:string, updatedData: Record<string, any>,defaultCulture:string,defaultData: Record<string, any>) => void
+    culture: string
+    defaultCulture: string
     defaultCultureData: Record<string, any>
     theme: any
 }
@@ -74,6 +74,7 @@ const flattenData = (
 
 const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     height,
+    width,
     data,
     onUpdate,
     culture,
@@ -100,7 +101,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                   : newRow;
           });
       });
-  }, [data, collapsedState]);
+  }, [data, defaultCultureData, culture, collapsedState]);
   
     const toggleGroup = (groupKey: string) => {
         setCollapsedState((prev) => ({
@@ -180,8 +181,8 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
   };
   
     const columns: GridColumn[] = [
-        { title: 'Key', id: 'key', width: 250 },
-        { title: 'Value', id: 'value', width: 400 },
+        { title: 'Key', id: 'key', grow: 1, width:100 },
+        { title: 'Value', id: 'value', grow: 3 , width:150},
     ]
     const getNestedValue = (obj: Record<string, any>, path: string): any => {
       return path.split('.').reduce((acc, key) => acc && acc[key] !== undefined ? acc[key] : undefined, obj);
@@ -205,6 +206,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     return (
         <DataEditor
             height={height}
+            width={width}
             columns={columns}
             getCellContent={(cell: Item): GridCell => {
                 const [col, row] = cell
@@ -235,7 +237,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                         displayData: `${prefix}${displayKey}`,
                         allowOverlay:
                             !rowData.isGroup &&
-                            culture.code === defaultCulture.code, // Editable only in default culture
+                            culture === defaultCulture, // Editable only in default culture
                         copyData: displayKey,
                         themeOverride:{
                           cellHorizontalPadding: 10 + rowData.depth * 15, //Add padding based on depth
@@ -292,7 +294,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
           
                   let newStructuredData = { ...data }; // Ensure we're working with a fresh copy
           
-                  if (col === 0 && culture.code === defaultCulture.code && !rowData.isGroup) {
+                  if (col === 0 && culture === defaultCulture && !rowData.isGroup) {
                       // Editing the Key
                       const newKeySegment = (newValue as { data: string }).data.trim();
                       const keyParts = rowData.key.split('.');
@@ -305,7 +307,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                     );
                     
                     let newDefaultData = defaultCultureData;
-                    if (culture.code === defaultCulture.code) {
+                    if (culture === defaultCulture) {
                         newDefaultData = updateNestedKey(
                             defaultCultureData,
                             rowData.key,
@@ -313,7 +315,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                         );
                     }
                       updatedData[row] = { ...rowData, key: newKey };
-                      onUpdate(newStructuredData, newDefaultData);
+                      onUpdate(culture,newStructuredData,defaultCulture, newDefaultData);
                   }
           
                   if (col === 1 && !rowData.isGroup) {
@@ -327,7 +329,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                           ...rowData,
                           value: newValueText,
                       };
-                      onUpdate(newStructuredData,defaultCultureData); // Update source data BEFORE calling setGridData
+                      onUpdate(culture,newStructuredData,defaultCulture,defaultCultureData); // Update source data BEFORE calling setGridData
                   }
           
                   return updatedData;

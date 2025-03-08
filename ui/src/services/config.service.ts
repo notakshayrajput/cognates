@@ -15,16 +15,14 @@ export class ConfigService {
 
   public async getConfig(): Promise<ICognatesConfig> {
     try {
-      const response = await HttpService.getSingletonInstance().get("/api/config");
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      return response as ICognatesConfig;
-    } catch (error) {
-      console.error("Failed to fetch config:", error);
-      throw new Error("Failed to fetch configuration.");
+        const response = await HttpService.getSingletonInstance().get("/api/config");
+        return response as ICognatesConfig;
+    } catch (error: any) { // Ensure error type safety
+        console.error("Failed to fetch config:", error?.message || error);
+        throw new Error(`Failed to fetch configuration: ${error?.message || "Unknown error"}`);
     }
-  }
+}
+
   
   public async getCultureInfo(): Promise<ICultureInfo[]> {
     try {
@@ -39,16 +37,18 @@ export class ConfigService {
     }
   }
   public async updateConfig(newConfig: ICognatesConfig): Promise<{ success: boolean; message: string }> {
-    try {
-      const response = await HttpService.getSingletonInstance().post("/api/config", newConfig);
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      return response as { success: boolean; message: string };
-    } catch (error) {
-      console.error("Failed to update config:", error);
-      throw new Error("Failed to update configuration.");
+    if (!newConfig) {
+        console.error("updateConfig: newConfig is undefined or null");
+        return { success: false, message: "Invalid config data" };
     }
-  }
+    
+    try {
+        const response = await HttpService.getSingletonInstance().post("/api/config", newConfig);
+        return response as { success: boolean; message: string };
+    } catch (error: any) {
+        console.error("Failed to update config:", error?.message || error);
+        return { success: false, message: "Failed to update configuration" };
+    }
+}
  
 }

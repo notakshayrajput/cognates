@@ -18,40 +18,33 @@ export class LocaleService {
 
   public async getLocaleFiles(): Promise<ILocaleFileInfo[]> {
     try {
-      const response = await this.httpService.get("/api/locales");
-    
-      return response as ILocaleFileInfo[];
+        const response = await this.httpService.get("/api/locales");
+        return response as ILocaleFileInfo[];
     } catch (error) {
-      console.error("Failed to fetch locale files:", error);
-      return [];
+        console.error("Failed to fetch locale files:", error);
+        throw new Error("Failed to fetch locale files."); // Throw error instead of returning []
     }
-  }
+}
+
   public async getLocaleFile(filePath: string): Promise<any> {
     try {
-      const response = await this.httpService.get(`/api/locale/${filePath}`);
-      return response;
-    } catch (error) {
+      return await this.httpService.get(`/api/locale/${filePath}`);
+  } catch (error) {
       console.error(`Failed to fetch locale file (${filePath}):`, error);
-      return null;
-    }
+      throw new Error(`Failed to fetch locale file: ${filePath}`);
   }
-  public async createLocaleFile(
-    code: string
-    //filePath: string,
-    //country: string
-  ): Promise<{ success: boolean; message: string }> {
-    try {
-      var filePath=code
-      const response = await this.httpService.post(`/api/locale/${filePath}`, {
-        code, //code is culture code
-        //filePath,
-        //country,
-      });
-      return response as { success: boolean; message: string };
-    } catch (error) {
+}
+public async createLocaleFile(code: string): Promise<{ success: boolean; message: string; localeFiles?: ILocaleFileInfo[] }> {
+  try {
+      const filePath = code;
+      const response = await this.httpService.post(`/api/locale/${filePath}`, { code });
+      const updatedLocaleFiles = await this.getLocaleFiles(); // Fetch updated list
+      return { ...response, localeFiles: updatedLocaleFiles };
+  } catch (error) {
       console.error(`Failed to create locale file (${code}.json):`, error);
       return { success: false, message: "Failed to create locale file" };
-    }
   }
+}
+
 
 }

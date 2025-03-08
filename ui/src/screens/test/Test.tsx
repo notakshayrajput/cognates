@@ -1,4 +1,3 @@
-import React from "react";
 import LocalizeLayout from "../../layout/localize-layout/LocalizeLayout";
 import DataGridWrapper from "@/components/dataGrid/DataGridWrapper";
 import "@glideapps/glide-data-grid/dist/index.css";
@@ -135,14 +134,8 @@ const initialData = {
 
 export default function Localize() {
     const { theme } = useTheme()
-    const culture:ICultureInfo={
-        code:"fr",
-        language:"French"
-    }
-    const defaultCulture:ICultureInfo={
-        code:"en",
-        language:"English"
-    }
+    const culture:string="fr"
+    const defaultCulture:string="en"
     const lightTheme = {
         // bgCell: "oklch(0.98 0.00 106)", // Lightest background
         textDark: "oklch(0.15 0.00 49)", // Dark text
@@ -163,9 +156,9 @@ export default function Localize() {
       const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
   return (
     <LocalizeLayout>
-    {/* <DataGridWrapper theme={appliedTheme} height="400px" data={initialDataFR} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={culture} onUpdate={(updatedData,defaultCultureData) => console.log(updatedData,defaultCultureData)} /> */}
+    <DataGridWrapper theme={appliedTheme} height="400px" data={initialDataFR} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={culture} onUpdate={(culture,updatedData,defaultCulture,defaultCultureData) => console.log(culture,updatedData,defaultCulture,defaultCultureData)} />
   
-    <DataGridWrapper theme={appliedTheme} height="400px" data={initialData} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={defaultCulture} onUpdate={(updatedData,defaultCultureData) => console.log(updatedData,defaultCultureData)} />
+    {/* <DataGridWrapper theme={appliedTheme} height="400px" data={initialData} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={defaultCulture} onUpdate={(culture,updatedData,defaultCulture,defaultCultureData) => console.log(culture,updatedData,defaultCulture,defaultCultureData)} /> */}
     </LocalizeLayout>
   );
 }
