@@ -136,8 +136,8 @@ const initialData = {
 export default function Localize() {
     const { theme } = useTheme()
     const culture:ICultureInfo={
-        code:"en",
-        language:"English"
+        code:"fr",
+        language:"French"
     }
     const defaultCulture:ICultureInfo={
         code:"en",
@@ -163,7 +163,9 @@ export default function Localize() {
       const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
   return (
     <LocalizeLayout>
-      <DataGridWrapper theme={appliedTheme} height="400px" data={initialDataFR} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={culture} onUpdate={(updatedData) => console.log(updatedData)} />
+    {/* <DataGridWrapper theme={appliedTheme} height="400px" data={initialDataFR} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={culture} onUpdate={(updatedData,defaultCultureData) => console.log(updatedData,defaultCultureData)} /> */}
+  
+    <DataGridWrapper theme={appliedTheme} height="400px" data={initialData} defaultCulture={defaultCulture} defaultCultureData={initialData} culture={defaultCulture} onUpdate={(updatedData,defaultCultureData) => console.log(updatedData,defaultCultureData)} />
     </LocalizeLayout>
   );
 }

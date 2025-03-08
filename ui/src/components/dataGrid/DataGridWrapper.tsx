@@ -8,7 +8,6 @@ import DataEditor, {
     GridCell,
 } from '@glideapps/glide-data-grid'
 import { ICultureInfo } from '@/types'
-import { ChevronRight, ChevronDown } from 'lucide-react'
 
 interface GridRow {
     key: string
@@ -21,7 +20,7 @@ interface GridRow {
 interface DataGridWrapperProps {
     height?: string | number
     data: Record<string, any>
-    onUpdate: (updatedData: Record<string, any>) => void
+    onUpdate: (updatedData: Record<string, any>,defaultData: Record<string, any>) => void
     culture: ICultureInfo
     defaultCulture: ICultureInfo
     defaultCultureData: Record<string, any>
@@ -90,11 +89,19 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     )
 
     useEffect(() => {
-        setGridData(
-            flattenData(defaultCultureData, data, '', 0, collapsedState),
-        )
-    }, [data, collapsedState])
-
+      setGridData((prevGridData) => {
+          const newGridData = flattenData(defaultCultureData, data, '', 0, collapsedState);
+  
+          // Merge previous edits into the new grid
+          return newGridData.map((newRow) => {
+              const existingRow = prevGridData.find((r) => r.key === newRow.key);
+              return existingRow && !newRow.isGroup
+                  ? { ...newRow, value: existingRow.value } // Preserve previous edits
+                  : newRow;
+          });
+      });
+  }, [data, collapsedState]);
+  
     const toggleGroup = (groupKey: string) => {
         setCollapsedState((prev) => ({
             ...prev,
@@ -155,19 +162,23 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     }
 
     const updateNestedValue = (
-        obj: Record<string, any>,
-        keyPath: string,
-        newValue: string | null,
-    ) => {
-        const keys = keyPath.split('.')
-        let current = obj
-        for (let i = 0; i < keys.length - 1; i++) {
-            if (!current[keys[i]]) return obj
-            current = current[keys[i]]
-        }
-        current[keys[keys.length - 1]] = newValue
-        return { ...obj } // Return new object for reactivity
-    }
+      obj: Record<string, any>,
+      keyPath: string,
+      newValue: string | null
+  ) => {
+      const keys = keyPath.split('.');
+      const newObj = { ...obj }; // Ensure immutability
+      let current = newObj;
+  
+      for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) current[keys[i]] = {}; // Ensure path exists
+          current = { ...current[keys[i]] }; // Spread to avoid mutation
+      }
+  
+      current[keys[keys.length - 1]] = newValue;
+      return newObj; // Return new reference
+  };
+  
     const columns: GridColumn[] = [
         { title: 'Key', id: 'key', width: 250 },
         { title: 'Value', id: 'value', width: 400 },
@@ -276,61 +287,53 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
           
               if (!rowData) return;
           
-              if (
-                  col === 0 &&
-                  culture.code === defaultCulture.code &&
-                  !rowData.isGroup
-              ) {
-                  // Editing the Key
-                  const newKeySegment = (newValue as { data: string }).data.trim();
-                  const keyParts = rowData.key.split('.');
-                  keyParts[keyParts.length - 1] = newKeySegment;
-                  const newKey = keyParts.join('.');
+              setGridData((prev) => {
+                  const updatedData = [...prev];
           
-                  setGridData((prev) => {
-                      const updatedData = [...prev];
+                  let newStructuredData = { ...data }; // Ensure we're working with a fresh copy
+          
+                  if (col === 0 && culture.code === defaultCulture.code && !rowData.isGroup) {
+                      // Editing the Key
+                      const newKeySegment = (newValue as { data: string }).data.trim();
+                      const keyParts = rowData.key.split('.');
+                      keyParts[keyParts.length - 1] = newKeySegment;
+                      const newKey = keyParts.join('.');
+                      let newStructuredData = updateNestedKey(
+                        data,
+                        rowData.key,
+                        newKey,
+                    );
+                    
+                    let newDefaultData = defaultCultureData;
+                    if (culture.code === defaultCulture.code) {
+                        newDefaultData = updateNestedKey(
+                            defaultCultureData,
+                            rowData.key,
+                            newKey
+                        );
+                    }
                       updatedData[row] = { ...rowData, key: newKey };
+                      onUpdate(newStructuredData, newDefaultData);
+                  }
           
-                      // Update the key in the structured data
-                      const newStructuredData = updateNestedKey(
-                          data,
-                          rowData.key,
-                          newKey,
-                      );
-                      onUpdate(newStructuredData);
+                  if (col === 1 && !rowData.isGroup) {
+                      // Editing the Value
+                      const newValueText = (newValue as { data: string }).data;
           
-                      return updatedData;
-                  });
-              }
+                      newStructuredData = addMissingNestedKey(newStructuredData, rowData.key);
+                      newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText);
           
-              if (col === 1 && !rowData.isGroup) {
-                  // Editing the Value
-                  const newValueText = (newValue as { data: string }).data;
-                  const isUsingDefault = rowData.value === null;
-          
-                  setGridData((prev) => {
-                      const updatedData = [...prev];
-          
-                      console.log("Set GridData", row,col);
                       updatedData[row] = {
                           ...rowData,
                           value: newValueText,
                       };
+                      onUpdate(newStructuredData,defaultCultureData); // Update source data BEFORE calling setGridData
+                  }
           
-                      // If the key does not exist in `data`, add it before updating
-                      let newStructuredData = { ...data };
-                      if (isUsingDefault) {
-                          console.log("Creating missing node:", rowData.key);
-                          newStructuredData = addMissingNestedKey(newStructuredData, rowData.key);
-                      }
-          
-                      // Update the structured data with the new value
-                      newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText);
-                      onUpdate(newStructuredData);
-                      return updatedData;
-                  });
-              }
+                  return updatedData;
+              });
           }}
+          
             rows={getVisibleRows().length}
             onCellClicked={(item) => {
                 const [, row] = item
