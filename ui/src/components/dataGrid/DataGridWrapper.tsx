@@ -20,11 +20,12 @@ interface DataGridWrapperProps {
     height?: string | number
     width?: string | number
     data: Record<string, any>
-    onUpdate: (culure:string, updatedData: Record<string, any>,defaultCulture:string,defaultData: Record<string, any>) => void
+    onUpdate?: (culture: string, updatedData: Record<string, any>, defaultCulture: string, defaultData: Record<string, any>) => void
     culture: string
     defaultCulture: string
     defaultCultureData: Record<string, any>
     theme: any
+    onEdit: (key: string, value: string | null) => void
 }
 
 const flattenData = (
@@ -81,6 +82,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     defaultCulture,
     theme = {},
     defaultCultureData,
+    onEdit,
 }) => {
     const [collapsedState, setCollapsedState] = useState<
         Record<string, boolean>
@@ -90,19 +92,19 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     )
 
     useEffect(() => {
-      setGridData((prevGridData) => {
-          const newGridData = flattenData(defaultCultureData, data, '', 0, collapsedState);
-  
-          // Merge previous edits into the new grid
-          return newGridData.map((newRow) => {
-              const existingRow = prevGridData.find((r) => r.key === newRow.key);
-              return existingRow && !newRow.isGroup
-                  ? { ...newRow, value: existingRow.value } // Preserve previous edits
-                  : newRow;
-          });
-      });
-  }, [data, defaultCultureData, culture, collapsedState]);
-  
+        setGridData((prevGridData) => {
+            const newGridData = flattenData(defaultCultureData, data, '', 0, collapsedState)
+
+            // Merge previous edits into the new grid
+            return newGridData.map((newRow) => {
+                const existingRow = prevGridData.find((r) => r.key === newRow.key)
+                return existingRow && !newRow.isGroup
+                    ? { ...newRow, value: existingRow.value } // Preserve previous edits
+                    : newRow
+            })
+        })
+    }, [data, defaultCultureData, culture, collapsedState])
+
     const toggleGroup = (groupKey: string) => {
         setCollapsedState((prev) => ({
             ...prev,
@@ -126,6 +128,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
         return visible
     }
+
     const updateNestedKey = (
         obj: Record<string, any>,
         oldKeyPath: string,
@@ -163,45 +166,48 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     }
 
     const updateNestedValue = (
-      obj: Record<string, any>,
-      keyPath: string,
-      newValue: string | null
-  ) => {
-      const keys = keyPath.split('.');
-      const newObj = { ...obj }; // Ensure immutability
-      let current = newObj;
-  
-      for (let i = 0; i < keys.length - 1; i++) {
-          if (!current[keys[i]]) current[keys[i]] = {}; // Ensure path exists
-          current = { ...current[keys[i]] }; // Spread to avoid mutation
-      }
-  
-      current[keys[keys.length - 1]] = newValue;
-      return newObj; // Return new reference
-  };
-  
-    const columns: GridColumn[] = [
-        { title: 'Key', id: 'key', grow: 1, width:100 },
-        { title: 'Value', id: 'value', grow: 3 , width:150},
-    ]
-    const getNestedValue = (obj: Record<string, any>, path: string): any => {
-      return path.split('.').reduce((acc, key) => acc && acc[key] !== undefined ? acc[key] : undefined, obj);
-  };const addMissingNestedKey = (obj: any, keyPath: string) => {
-    const keys = keyPath.split('.');
-    let current = obj;
+        obj: Record<string, any>,
+        keyPath: string,
+        newValue: string | null
+    ) => {
+        const keys = keyPath.split('.')
+        const newObj = { ...obj } // Ensure immutability
+        let current = newObj
 
-    for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-
-        if (!current[key]) {
-            current[key] = i === keys.length - 1 ? "" : {}; // Create an empty object or string
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) current[keys[i]] = {} // Ensure path exists
+            current = { ...current[keys[i]] } // Spread to avoid mutation
         }
 
-        current = current[key];
+        current[keys[keys.length - 1]] = newValue
+        return newObj // Return new reference
     }
 
-    return obj;
-};
+    const columns: GridColumn[] = [
+        { title: 'Key', id: 'key', grow: 1, width: 100 },
+        { title: 'Value', id: 'value', grow: 3, width: 150 },
+    ]
+
+    const getNestedValue = (obj: Record<string, any>, path: string): any => {
+        return path.split('.').reduce((acc, key) => acc && acc[key] !== undefined ? acc[key] : undefined, obj)
+    }
+
+    const addMissingNestedKey = (obj: any, keyPath: string) => {
+        const keys = keyPath.split('.')
+        let current = obj
+
+        for (let i = 0; i < keys.length; i++) {
+            const key = keys[i]
+
+            if (!current[key]) {
+                current[key] = i === keys.length - 1 ? "" : {} // Create an empty object or string
+            }
+
+            current = current[key]
+        }
+
+        return obj
+    }
 
     return (
         <DataEditor
@@ -239,11 +245,9 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                             !rowData.isGroup &&
                             culture === defaultCulture, // Editable only in default culture
                         copyData: displayKey,
-                        themeOverride:{
-                          cellHorizontalPadding: 10 + rowData.depth * 15, //Add padding based on depth
+                        themeOverride: {
+                            cellHorizontalPadding: 10 + rowData.depth * 15, // Add padding based on depth
                         }
-                        
-                        
                     }
                 }
 
@@ -263,12 +267,12 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
                     return {
                         kind: GridCellKind.Text,
-                        data: rowData.value ?? "", //dont set value just display default value
-                        style:isUsingDefault?"faded":"normal",
-                        displayData: isUsingDefault? `${defaultValue}` : displayValue, // Italicize using Markdown-style `*`
+                        data: rowData.value ?? "", // Don't set value just display default value
+                        style: isUsingDefault ? "faded" : "normal",
+                        displayData: isUsingDefault ? `${defaultValue}` : displayValue, // Italicize using Markdown-style `*`
                         allowOverlay: !rowData.isGroup, // Prevent editing in groups
                         copyData: displayValue,
-                        allowWrapping:true
+                        allowWrapping: true
                     }
                 }
 
@@ -284,58 +288,59 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
             headerHeight={32}
             rowHeight={28}
             onCellEdited={(cell: Item, newValue: EditableGridCell) => {
-              const [col, row] = cell;
-              const rowData = getVisibleRows()[row];
-          
-              if (!rowData) return;
-          
-              setGridData((prev) => {
-                  const updatedData = [...prev];
-          
-                  let newStructuredData = { ...data }; // Ensure we're working with a fresh copy
-          
-                  if (col === 0 && culture === defaultCulture && !rowData.isGroup) {
-                      // Editing the Key
-                      const newKeySegment = (newValue as { data: string }).data.trim();
-                      const keyParts = rowData.key.split('.');
-                      keyParts[keyParts.length - 1] = newKeySegment;
-                      const newKey = keyParts.join('.');
-                      let newStructuredData = updateNestedKey(
-                        data,
-                        rowData.key,
-                        newKey,
-                    );
-                    
-                    let newDefaultData = defaultCultureData;
-                    if (culture === defaultCulture) {
-                        newDefaultData = updateNestedKey(
-                            defaultCultureData,
+                const [col, row] = cell
+                const rowData = getVisibleRows()[row]
+
+                if (!rowData) return
+
+                setGridData((prev) => {
+                    const updatedData = [...prev]
+
+                    let newStructuredData = { ...data } // Ensure we're working with a fresh copy
+
+                    if (col === 0 && culture === defaultCulture && !rowData.isGroup) {
+                        // Editing the Key
+                        const newKeySegment = (newValue as { data: string }).data.trim()
+                        const keyParts = rowData.key.split('.')
+                        keyParts[keyParts.length - 1] = newKeySegment
+                        const newKey = keyParts.join('.')
+                        newStructuredData = updateNestedKey(
+                            data,
                             rowData.key,
-                            newKey
-                        );
+                            newKey,
+                        )
+
+                        let newDefaultData = defaultCultureData
+                        if (culture === defaultCulture) {
+                            newDefaultData = updateNestedKey(
+                                defaultCultureData,
+                                rowData.key,
+                                newKey
+                            )
+                        }
+                        updatedData[row] = { ...rowData, key: newKey }
+                        // onUpdate(culture, newStructuredData, defaultCulture, newDefaultData)
+                        onEdit(newKey, rowData.value)
                     }
-                      updatedData[row] = { ...rowData, key: newKey };
-                      onUpdate(culture,newStructuredData,defaultCulture, newDefaultData);
-                  }
-          
-                  if (col === 1 && !rowData.isGroup) {
-                      // Editing the Value
-                      const newValueText = (newValue as { data: string }).data;
-          
-                      newStructuredData = addMissingNestedKey(newStructuredData, rowData.key);
-                      newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText);
-          
-                      updatedData[row] = {
-                          ...rowData,
-                          value: newValueText,
-                      };
-                      onUpdate(culture,newStructuredData,defaultCulture,defaultCultureData); // Update source data BEFORE calling setGridData
-                  }
-          
-                  return updatedData;
-              });
-          }}
-          
+
+                    if (col === 1 && !rowData.isGroup) {
+                        // Editing the Value
+                        const newValueText = (newValue as { data: string }).data
+
+                        newStructuredData = addMissingNestedKey(newStructuredData, rowData.key)
+                        newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText)
+
+                        updatedData[row] = {
+                            ...rowData,
+                            value: newValueText,
+                        }
+                        // onUpdate(culture, newStructuredData, defaultCulture, defaultCultureData) // Update source data BEFORE calling setGridData
+                        onEdit(rowData.key, newValueText)
+                    }
+
+                    return updatedData
+                })
+            }}
             rows={getVisibleRows().length}
             onCellClicked={(item) => {
                 const [, row] = item
