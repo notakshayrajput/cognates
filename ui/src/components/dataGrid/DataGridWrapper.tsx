@@ -127,6 +127,18 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
         const keys = oldKeyPath.split('.')
         const parentKeys = keys.slice(0, -1)
         const newKey = newKeyPath.split('.').pop()!
+        if (parentKeys.length === 0) {
+            // Handle top-level keys
+            const newObj: Record<string, any> = {}
+            Object.keys(obj).forEach((key) => {
+                if (key === keys[0]) {
+                    newObj[newKey] = obj[key] // Move the renamed key in place
+                } else {
+                    newObj[key] = obj[key] // Keep everything else in order
+                }
+            })
+            return newObj // Return a new object for reactivity
+        }
 
         let current = obj
         for (let i = 0; i < parentKeys.length; i++) {
