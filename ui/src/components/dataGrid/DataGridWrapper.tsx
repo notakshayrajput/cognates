@@ -92,17 +92,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     const [defaultData, setDefaultData] = useState(defaultCultureData)
 
     useEffect(() => {
-        setGridData((prevGridData) => {
-            const newGridData = flattenData(defaultCultureData, structuredData, '', 0, collapsedState)
-
-            // Merge previous edits into the new grid
-            return newGridData.map((newRow) => {
-                const existingRow = prevGridData.find((r) => r.key === newRow.key)
-                return existingRow && !newRow.isGroup
-                    ? { ...newRow, value: existingRow.value } // Preserve previous edits
-                    : newRow
-            })
-        })
+        setGridData(flattenData(defaultCultureData, structuredData, '', 0, collapsedState))
     }, [structuredData, defaultCultureData, culture, collapsedState])
 
     const toggleGroup = (groupKey: string) => {
@@ -340,7 +330,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
                     setStructuredData(newStructuredData)
                     setDefaultData(newDefaultData)
-                    setGridData(updatedData) // Ensure gridData is updated
+                    setGridData(flattenData(defaultCultureData, newStructuredData, '', 0, collapsedState)) // Ensure gridData is updated
 
                     if(onUpdate)
                         onUpdate(newStructuredData, newDefaultData)
