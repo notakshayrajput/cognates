@@ -85,15 +85,15 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     const [collapsedState, setCollapsedState] = useState<
         Record<string, boolean>
     >({})
-    const [gridData, setGridData] = useState<GridRow[]>(
-        flattenData(defaultCultureData, data, '', 0, collapsedState),
-    )
     const [structuredData, setStructuredData] = useState(data)
     const [defaultData, setDefaultData] = useState(defaultCultureData)
+    const [gridData, setGridData] = useState<GridRow[]>(() =>
+        flattenData(defaultCultureData, data, '', 0, collapsedState)
+    )
 
     useEffect(() => {
-        setGridData(flattenData(defaultCultureData, structuredData, '', 0, collapsedState))
-    }, [structuredData, defaultCultureData, culture, collapsedState])
+        setGridData(flattenData(defaultData, structuredData, '', 0, collapsedState))
+    }, [structuredData, defaultData, collapsedState])
 
     const toggleGroup = (groupKey: string) => {
         setCollapsedState((prev) => ({
@@ -330,7 +330,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
                     setStructuredData(newStructuredData)
                     setDefaultData(newDefaultData)
-                    setGridData(flattenData(defaultCultureData, newStructuredData, '', 0, collapsedState)) // Ensure gridData is updated
+                    setGridData(flattenData(defaultData, newStructuredData, '', 0, collapsedState)) // Ensure gridData is updated
 
                     if(onUpdate)
                         onUpdate(newStructuredData, newDefaultData)
