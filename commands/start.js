@@ -196,6 +196,9 @@ app.put("/api/locale/:filePath", async (req, res) => {
     fs.writeFileSync(resolvedFilePath, JSON.stringify(content, null, 2));
 
     res.json({ success: true, message: `Locale file '${filePath}' updated successfully` });
+    if(config.defaultLanguage == filePath.replace(".json","")){
+      await generateType();
+    }
   } catch (error) {
     console.error("Failed to update locale file:", error);
     res.status(500).json({ error: "Failed to update locale file" });

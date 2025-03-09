@@ -20,7 +20,7 @@ interface DataGridWrapperProps {
     height?: string | number
     width?: string | number
     data: Record<string, any>
-    onUpdate?: (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>,keyChanges:Array<{ oldKey: string; newKey: string }>) => void
+    onUpdate?: (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>,keyChanges:{ oldKey: string; newKey: string }) => void
     culture: string
     defaultCulture: string
     defaultCultureData: Record<string, any>
@@ -91,7 +91,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     const [gridData, setGridData] = useState<GridRow[]>(() =>
         flattenData(defaultCultureData, data, '', 0, collapsedState)
     )
-    const [keyChanges, setKeyChanges] = useState<Array<{ oldKey: string; newKey: string }>>([]);
+    const [keyChanges, setKeyChanges] = useState<{ oldKey: string; newKey: string }>();
 
     useEffect(() => {
         setGridData(flattenData(defaultData, structuredData, '', 0, collapsedState))
@@ -294,7 +294,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
             onCellEdited={(cell: Item, newValue: EditableGridCell) => {
                 const [col, row] = cell
                 const rowData = getVisibleRows()[row]
-                let _keyChanges:Array<{oldKey:string,newKey:string}> = [...keyChanges];
+                let _keyChanges:any=null;//:Array<{oldKey:string,newKey:string}> = [...keyChanges];
                 if (!rowData) return
 
                 setGridData((prev) => {
@@ -323,7 +323,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                             )                            
                         }
                         updatedData[row] = { ...rowData, key: newKey }
-                        _keyChanges =[..._keyChanges,{ oldKey: rowData.key, newKey }]
+                        _keyChanges ={ oldKey: rowData.key, newKey }
                         setKeyChanges(_keyChanges);
                     }
 

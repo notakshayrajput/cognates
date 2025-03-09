@@ -31,7 +31,7 @@ export default function Localize() {
     const [pendingTab, setPendingTab] = useState<string | undefined>(undefined)
     const [unsavedData, setUnsaveData] = useState<any>(undefined)
     const [showKeyChangeDialog, setShowKeyChangeDialog] = useState(false)
-    const [keyChanges, setKeyChanges] = useState<Array<{ oldKey: string; newKey: string }>>([])
+    const [trackedKeyChanges, setTrackedKeyChanges] = useState<Array<{ oldKey: string; newKey: string }>>([])
 
     useEffect(() => {
         async function fetchLocaleFiles() {
@@ -154,7 +154,7 @@ export default function Localize() {
         updatedData: any,
         defaultCulture: string,
         defaultCultureData: any,
-        keyChanges: Array<{ oldKey: string; newKey: string }>
+        keyChanges: { oldKey: string; newKey: string }
     ) => {
         console.log(
             culture,
@@ -163,7 +163,8 @@ export default function Localize() {
             defaultCultureData,
             keyChanges
         )
-        setKeyChanges(keyChanges)
+        if(keyChanges)
+        setTrackedKeyChanges((prev)=>[...prev,keyChanges])
         setUnsaveData({ culture: culture, content: updatedData })
         setIsDirty(true)
     }
@@ -182,8 +183,9 @@ export default function Localize() {
     }
 
     const handleSave = async () => {
+        console.log(trackedKeyChanges)
         if (isDirty) {
-            if (keyChanges.length > 0) {
+            if (trackedKeyChanges.length > 0) {
                 setShowKeyChangeDialog(true)
                 return
             }
@@ -191,10 +193,9 @@ export default function Localize() {
                 unsavedData.culture,
                 unsavedData.content
             )
-            if (response.success) {
-                alert('Saved Successfully')
-                setKeyChanges([])   
+            if (response.success) { 
                 setIsDirty(false)
+                alert('Saved Successfully')
             } else {
                 alert('Failed to save\n' + response.message)
             }
@@ -202,8 +203,9 @@ export default function Localize() {
     }
 
     const handleConfirmKeyChanges = async () => {
-        const response = await LocaleService.getSingletonInstance().renameKeys(keyChanges)
-        if (response.success) {
+        const response = await LocaleService.getSingletonInstance().renameKeys(trackedKeyChanges)
+        if (response.success) {            
+            setTrackedKeyChanges([])  
             alert('Keys renamed successfully')
             await handleSave()
         } else {
@@ -289,7 +291,7 @@ export default function Localize() {
                                 </Button>
                             </PopoverContent>
                         </Popover>
-                        {(isDirty || keyChanges.length>0) &&
+                        {(isDirty || trackedKeyChanges.length>0) &&
                             <Button onClick={handleSave}>Save</Button>
                             }
                     </div>
