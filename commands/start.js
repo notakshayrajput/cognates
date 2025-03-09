@@ -247,17 +247,31 @@ function renameKeys(obj, keyChanges) {
     let parent = null;
     let lastOldKey = oldPath.pop();
     let lastNewKey = newPath.pop();
+    let parentKey = null;
 
-    // Traverse to the target key
+    // Traverse down the object to find the key
     for (const segment of oldPath) {
-      if (!current[segment]) return; // Key path not found, return early
+      if (!(segment in current)) return; // If path is broken, do nothing
       parent = current;
+      parentKey = segment;
       current = current[segment];
     }
 
     if (current && lastOldKey in current) {
-      current[lastNewKey] = current[lastOldKey];
-      delete current[lastOldKey];
+      // Rename key while maintaining order
+      const updatedEntries = Object.entries(current).map(([key, value]) =>
+        key === lastOldKey ? [lastNewKey, value] : [key, value]
+      );
+
+      // Reconstruct object while preserving key order
+      const updatedObject = Object.fromEntries(updatedEntries);
+
+      // Update reference in parent
+      if (parent && parentKey) {
+        parent[parentKey] = updatedObject;
+      } else {
+        Object.assign(obj, updatedObject);
+      }
     }
   }
 
@@ -266,7 +280,7 @@ function renameKeys(obj, keyChanges) {
 
     const newObj = Array.isArray(currentObj) ? [...currentObj] : {};
 
-    // Apply renaming at the correct level
+    // Recursively process the object
     Object.keys(currentObj).forEach((key) => {
       if (typeof currentObj[key] === "object") {
         newObj[key] = processObject(currentObj[key]);
@@ -275,7 +289,7 @@ function renameKeys(obj, keyChanges) {
       }
     });
 
-    // Apply renaming only after processing children to preserve order
+    // Apply renaming at all levels
     keyMap.forEach((newKey, oldKey) => {
       renameNestedKey(newObj, oldKey, newKey);
     });
