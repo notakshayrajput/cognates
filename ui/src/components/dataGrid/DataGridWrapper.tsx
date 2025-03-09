@@ -7,7 +7,6 @@ import DataEditor, {
     Item,
     GridCell,
 } from '@glideapps/glide-data-grid'
-import { on } from 'events'
 
 interface GridRow {
     key: string
@@ -21,7 +20,7 @@ interface DataGridWrapperProps {
     height?: string | number
     width?: string | number
     data: Record<string, any>
-    onUpdate?: (culture: string, updatedData: Record<string, any>, defaultCulture: string, defaultData: Record<string, any>) => void
+    onUpdate?: (updatedData: Record<string, any>, updatedDefaultData: Record<string, any>) => void
     culture: string
     defaultCulture: string
     defaultCultureData: Record<string, any>
@@ -89,10 +88,12 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     const [gridData, setGridData] = useState<GridRow[]>(
         flattenData(defaultCultureData, data, '', 0, collapsedState),
     )
+    const [structuredData, setStructuredData] = useState(data)
+    const [defaultData, setDefaultData] = useState(defaultCultureData)
 
     useEffect(() => {
         setGridData((prevGridData) => {
-            const newGridData = flattenData(defaultCultureData, data, '', 0, collapsedState)
+            const newGridData = flattenData(defaultCultureData, structuredData, '', 0, collapsedState)
 
             // Merge previous edits into the new grid
             return newGridData.map((newRow) => {
@@ -102,7 +103,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                     : newRow
             })
         })
-    }, [data, defaultCultureData, culture, collapsedState])
+    }, [structuredData, defaultCultureData, culture, collapsedState])
 
     const toggleGroup = (groupKey: string) => {
         setCollapsedState((prev) => ({
@@ -175,7 +176,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
         for (let i = 0; i < keys.length - 1; i++) {
             if (!current[keys[i]]) current[keys[i]] = {} // Ensure path exists
-            current = { ...current[keys[i]] } // Spread to avoid mutation
+            current = current[keys[i]]
         }
 
         current[keys[keys.length - 1]] = newValue
@@ -295,7 +296,8 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                 setGridData((prev) => {
                     const updatedData = [...prev]
 
-                    let newStructuredData = { ...data } // Ensure we're working with a fresh copy
+                    let newStructuredData = { ...structuredData } // Ensure we're working with a fresh copy
+                    let newDefaultData = { ...defaultData }
 
                     if (col === 0 && culture === defaultCulture && !rowData.isGroup) {
                         // Editing the Key
@@ -304,22 +306,19 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                         keyParts[keyParts.length - 1] = newKeySegment
                         const newKey = keyParts.join('.')
                         newStructuredData = updateNestedKey(
-                            data,
+                            structuredData,
                             rowData.key,
                             newKey,
                         )
 
-                        let newDefaultData = defaultCultureData
                         if (culture === defaultCulture) {
                             newDefaultData = updateNestedKey(
-                                defaultCultureData,
+                                defaultData,
                                 rowData.key,
                                 newKey
                             )
                         }
                         updatedData[row] = { ...rowData, key: newKey }
-                        if(onUpdate)
-                        onUpdate(culture, newStructuredData,defaultCulture, newDefaultData)
                     }
 
                     if (col === 1 && !rowData.isGroup) {
@@ -329,16 +328,25 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                         newStructuredData = addMissingNestedKey(newStructuredData, rowData.key)
                         newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText)
 
+                        if (culture === defaultCulture) {
+                            newDefaultData = updateNestedValue(newDefaultData, rowData.key, newValueText)
+                        }
+
                         updatedData[row] = {
                             ...rowData,
                             value: newValueText,
                         }
-                        if(onUpdate)
-                        onUpdate(culture,newStructuredData,defaultCulture, defaultCultureData)
                     }
 
+                    setStructuredData(newStructuredData)
+                    setDefaultData(newDefaultData)
+                    setGridData(updatedData) // Ensure gridData is updated
+
+                    if(onUpdate)
+                        onUpdate(newStructuredData, newDefaultData)
+
                     console.log('Updated Grid Data:', newStructuredData)
-                    console.log('Updated Default Culture Data:', defaultCultureData)
+                    console.log('Updated Default Culture Data:', newDefaultData)
 
                     return updatedData
                 })
