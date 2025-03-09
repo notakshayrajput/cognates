@@ -29,6 +29,7 @@ export default function Localize() {
     const [cultureList, setCultureList] = useState<ICultureInfo[]>([])
     const [showDialog, setShowDialog] = useState(false)
     const [pendingTab, setPendingTab] = useState<string | undefined>(undefined)
+    const [unsavedData, setUnsaveData] = useState<any>(undefined)  
     useEffect(() => {
         async function fetchLocaleFiles() {
             try {
@@ -148,6 +149,7 @@ export default function Localize() {
                 defaultCulture,
                 defaultCultureData,
             )
+            setUnsaveData({culture:culture,content:updatedData})
             setIsDirty(true);
     }
     const handleDialogConfirm = async () => {
@@ -161,6 +163,21 @@ export default function Localize() {
     const handleDialogCancel = () => {
         setShowDialog(false)
         setPendingTab(undefined)
+    }
+    const handleSave=async()=>{
+        if(isDirty){
+            
+            //const response=await LocaleService.getSingletonInstance().saveLocaleFile(activeTab,content);
+           console.log(unsavedData)
+            setIsDirty(false);
+        }
+    }
+    
+    const handleSaveFromDialog=async()=>{
+    handleSave().then(()=>{ 
+        handleDialogConfirm()
+
+    })
     }
     return (
         <LocalizeLayout>
@@ -233,7 +250,7 @@ export default function Localize() {
                         {config?.defaultLanguage === activeTab?.replace('.json', '') && 
                             <Button>Generate Type File</Button>}
                         {isDirty &&
-                            <Button>Save</Button>}
+                            <Button onClick={handleSave}>Save</Button>}
                             </div>
                     {/* Content Panel (Placeholder for Table) */}
                     <div className="table scroll mt-2 drop-shadow-lg h-[calc(100vh-150px)] overflow-auto">
@@ -269,8 +286,13 @@ export default function Localize() {
                     </DialogHeader>
                     <p>Changes not saved. If you switch tabs now, the changes will be lost. Save the changes before switching tabs.</p>
                     <DialogFooter>
+                        <div className='flex justify-between gap-2'>
+                        <div className='flex gap-2 justify-start'>
+                        <Button onClick={handleSaveFromDialog}variant={"outline"}>Save</Button>
+                        <Button onClick={handleDialogConfirm} variant={"outline"}>Change Anyway</Button>
+                        </div>
                         <Button onClick={handleDialogCancel}>Cancel</Button>
-                        <Button onClick={handleDialogConfirm}>Change Anyway</Button>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
