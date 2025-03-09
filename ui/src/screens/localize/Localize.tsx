@@ -25,11 +25,14 @@ export default function Localize() {
     const [newCultureCode, setNewCultureCode] = useState('')
     const [content, setFileContent] = useState<any>(undefined)
     const [defaultContent, setDefaultFileContent] = useState<any>(undefined)
-    const [isDirty,setIsDirty]=useState(false);
+    const [isDirty, setIsDirty] = useState(false)
     const [cultureList, setCultureList] = useState<ICultureInfo[]>([])
     const [showDialog, setShowDialog] = useState(false)
     const [pendingTab, setPendingTab] = useState<string | undefined>(undefined)
-    const [unsavedData, setUnsaveData] = useState<any>(undefined)  
+    const [unsavedData, setUnsaveData] = useState<any>(undefined)
+    const [showKeyChangeDialog, setShowKeyChangeDialog] = useState(false)
+    const [keyChanges, setKeyChanges] = useState<Array<{ oldKey: string; newKey: string }>>([])
+
     useEffect(() => {
         async function fetchLocaleFiles() {
             try {
@@ -42,6 +45,7 @@ export default function Localize() {
         }
         fetchLocaleFiles()
     }, [activeTab])
+
     async function loadTabs() {
         const files =
             await LocaleService.getSingletonInstance().getLocaleFiles()
@@ -61,11 +65,13 @@ export default function Localize() {
             }
         }
     }
+
     async function getCultureInfoForAdd() {
         const configService = ConfigService.getSingletonInstance()
         const cultureInfoList = await configService.getCultureInfo()
         setCultureList(cultureInfoList)
     }
+
     const loadFileContent = async (filePath: string) => {
         try {
             const fileContent =
@@ -78,6 +84,7 @@ export default function Localize() {
             console.error('Error fetching locale file:', error)
         }
     }
+
     const loadDefaultFileContent = async (config: ICognatesConfig) => {
         try {
             const fileContent =
@@ -90,6 +97,7 @@ export default function Localize() {
             console.error('Error fetching locale file:', error)
         }
     }
+
     const handleTabChange = async (tab: string) => {
         if (isDirty) {
             setPendingTab(tab)
@@ -106,6 +114,7 @@ export default function Localize() {
             console.log(tab, config?.defaultLanguage)
         })
     }
+
     const handleAddLocale = async () => {
         if (!newCultureCode.trim()) return
         const localeService = LocaleService.getSingletonInstance()
@@ -139,19 +148,26 @@ export default function Localize() {
         rowBg: 'oklch(0.27 0.01 34)', // Row background
     }
     const appliedTheme = theme === 'dark' ? darkTheme : lightTheme
-    const onUpdate=(culture:string,
-        updatedData:any,
-        defaultCulture:string,
-        defaultCultureData:any)=>{
-            console.log(
-                culture,
-                updatedData,
-                defaultCulture,
-                defaultCultureData,
-            )
-            setUnsaveData({culture:culture,content:updatedData})
-            setIsDirty(true);
+
+    const onUpdate = (
+        culture: string,
+        updatedData: any,
+        defaultCulture: string,
+        defaultCultureData: any,
+        keyChanges: Array<{ oldKey: string; newKey: string }>
+    ) => {
+        console.log(
+            culture,
+            updatedData,
+            defaultCulture,
+            defaultCultureData,
+            keyChanges
+        )
+        setKeyChanges(keyChanges)
+        setUnsaveData({ culture: culture, content: updatedData })
+        setIsDirty(true)
     }
+
     const handleDialogConfirm = async () => {
         setShowDialog(false)
         if (pendingTab) {
@@ -164,46 +180,66 @@ export default function Localize() {
         setShowDialog(false)
         setPendingTab(undefined)
     }
-    const handleSave=async()=>{
-        if(isDirty){
-            
-            //const response=await LocaleService.getSingletonInstance().saveLocaleFile(activeTab,content);
-           console.log(unsavedData)
-              const response=await LocaleService.getSingletonInstance().updateLocaleFile(unsavedData.culture,unsavedData.content);
-              if(response.success){
-                  alert('Saved Successfully')
-            setIsDirty(false);
-              }
-              else{
-                    alert('Failed to save\n'+response.message)
-              }
+
+    const handleSave = async () => {
+        if (isDirty) {
+            if (keyChanges.length > 0) {
+                setShowKeyChangeDialog(true)
+                return
+            }
+            const response = await LocaleService.getSingletonInstance().updateLocaleFile(
+                unsavedData.culture,
+                unsavedData.content
+            )
+            if (response.success) {
+                alert('Saved Successfully')
+                setKeyChanges([])   
+                setIsDirty(false)
+            } else {
+                alert('Failed to save\n' + response.message)
+            }
         }
     }
-    
-    const handleSaveFromDialog=async()=>{
-    handleSave().then(()=>{ 
-        handleDialogConfirm()
 
-    })
+    const handleConfirmKeyChanges = async () => {
+        const response = await LocaleService.getSingletonInstance().renameKeys(keyChanges)
+        if (response.success) {
+            alert('Keys renamed successfully')
+            await handleSave()
+        } else {
+            alert('Failed to rename keys\n' + response.message)
+        }
+        setShowKeyChangeDialog(false)
     }
+
+    const handleCancelKeyChanges = () => {
+        setShowKeyChangeDialog(false)
+    }
+
+    const handleSaveFromDialog = async () => {
+        handleSave().then(() => {
+            handleDialogConfirm()
+        })
+    }
+
     return (
         <LocalizeLayout>
             <div className="flex h-full items-start">
-                {/* Sidebar */}
+                {/* Sidebar
                 <aside className="w-64 sidebar scroll  overflow-x-auto overflow-y-auto drop-shadow-lg p-2 h-[calc(100vh-145px)]">
                     Sidebar Content (Empty for now)
-                </aside>
+                </aside> */}
 
                 {/* Main Content */}
-                <div className="flex flex-col flex-1 pl-4 table-parent h-[calc(100vh-145px)] w-[calc(100vw-20rem)] ">
+                <div className="flex flex-col flex-1table-parent h-[calc(100vh-145px)] w-[calc(100vw-4rem)] ">
                     {/* Tabs */}
                     <div className="flex justify-between">
                         <Tabs
                             value={activeTab}
                             onValueChange={handleTabChange}
-                            className="tabs scroll pb-2 overflow-x-auto overflow-y-hidden max-w-[calc(100vw-20rem)]"
+                            className="tabs scroll pb-2 overflow-x-auto overflow-y-hidden max-w-[calc(100vw-4rem)]"
                         >
-                            <TabsList className="tabs-list gap-2 max-w-[calc(100vw-24rem)]">
+                            <TabsList className="tabs-list gap-2 max-w-[calc(100vw-10rem)]">
                                 {localeFiles.map(
                                     ({ fileName, filePath, cultureInfo }) => {
                                         const tabLabel =
@@ -223,12 +259,13 @@ export default function Localize() {
                                 )}
                             </TabsList>
                         </Tabs>
+                        <div className="flex w-fit justify-end drop-shadow-lg max-h-30 gap-2">
                         <Popover
                             open={openAddPopOver}
                             onOpenChange={setOpenAddPopOver}
                         >
                             <PopoverTrigger asChild>
-                                <Button className="flex tabs-list drop-shadow-lg h-auto ml-2 w-10">
+                                <Button className="flex tabs-list drop-shadow-lg  ml-2 w-10">
                                     <PlusIcon />
                                 </Button>
                             </PopoverTrigger>
@@ -252,13 +289,12 @@ export default function Localize() {
                                 </Button>
                             </PopoverContent>
                         </Popover>
+                        {(isDirty || keyChanges.length>0) &&
+                            <Button onClick={handleSave}>Save</Button>
+                            }
                     </div>
-                    <div className="flex w-full justify-end mt-2 drop-shadow-lg max-h-30 gap-2">
-                        {config?.defaultLanguage === activeTab?.replace('.json', '') && 
-                            <Button>Generate Type File</Button>}
-                        {isDirty &&
-                            <Button onClick={handleSave}>Save</Button>}
-                            </div>
+                    </div>
+                    
                     {/* Content Panel (Placeholder for Table) */}
                     <div className="table scroll mt-2 drop-shadow-lg h-[calc(100vh-150px)] overflow-auto">
                         {content &&
@@ -277,7 +313,6 @@ export default function Localize() {
                                 culture={activeTab.replace('.json', '')}
                                 onUpdate={onUpdate}
                             />
-                            
                             </>
                         ) : (
                             <p>Loading data...</p>
@@ -294,12 +329,22 @@ export default function Localize() {
                     <p>Changes not saved. If you switch tabs now, the changes will be lost. Save the changes before switching tabs.</p>
                     <DialogFooter>
                         <div className='flex justify-between gap-2'>
-                        <div className='flex gap-2 justify-start'>
-                        <Button onClick={handleSaveFromDialog}variant={"outline"}>Save</Button>
-                        <Button onClick={handleDialogConfirm} variant={"outline"}>Change Anyway</Button>
+                            <Button onClick={handleDialogConfirm} variant={"outline"}>Proceed and Change Anyway</Button>
+                            <Button onClick={handleDialogCancel}>Cancel and Go back</Button>
                         </div>
-                        <Button onClick={handleDialogCancel}>Cancel</Button>
-                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            {/* Key Change Confirmation Dialog */}
+            <Dialog open={showKeyChangeDialog} onOpenChange={setShowKeyChangeDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Key Changes</DialogTitle>
+                    </DialogHeader>
+                    <p>You have made changes to the locale keys. Confirming the changes will update the keys in all locales. Do you want to continue?</p>
+                    <DialogFooter>
+                        <Button onClick={handleConfirmKeyChanges}>Yes, Proceed</Button>
+                        <Button onClick={handleCancelKeyChanges}>Cancel</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

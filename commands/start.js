@@ -170,8 +170,107 @@ app.post("/api/locale/:filePath", async (req, res) => {
   }
 });
 
+// API to rename keys in all locale files
+app.post("/api/locale/key/rename", async (req, res) => {
+  try {
+    const config = await getConfigAsync();
+    const { keyChanges } = req.body;
 
-// New API to update locale file content
+    if (!Array.isArray(keyChanges)) {
+      return res.status(400).json({ error: "Invalid or missing 'keyChanges' field" });
+    }
+
+    const localeDir = path.resolve(config.localeDir);
+    const files = fs.readdirSync(localeDir).filter(file => file.endsWith(".json"));
+
+    const renameKeysInObject = (obj, keyChanges) => {
+      const newObj = {};
+      Object.keys(obj).forEach(key => {
+        const keyChange = keyChanges.find(kc => kc.oldKey === key);
+        const newKey = keyChange ? keyChange.newKey : key;
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          newObj[newKey] = renameKeysInObject(obj[key], keyChanges);
+        } else {
+          newObj[newKey] = obj[key];
+        }
+      });
+      return newObj;
+    };
+
+    const updateKeys = (obj, keyChanges) => {
+      keyChanges.forEach(({ oldKey, newKey }) => {
+        const keys = oldKey.split('.');
+        const newKeys = newKey.split('.');
+        let current = obj;
+        let newCurrent = obj;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+          if (!current[keys[i]]) return;
+          current = current[keys[i]];
+          if (!newCurrent[newKeys[i]]) newCurrent[newKeys[i]] = {};
+          newCurrent = newCurrent[newKeys[i]];
+        }
+
+        if (current[keys[keys.length - 1]] !== undefined) {
+          newCurrent[newKeys[newKeys.length - 1]] = current[keys[keys.length - 1]];
+          delete current[keys[keys.length - 1]];
+        }
+      });
+    };
+
+    const renameKeysInObjectWithOrder = (obj, keyChanges) => {
+      const newObj = {};
+      Object.keys(obj).forEach(key => {
+        const keyChange = keyChanges.find(kc => kc.oldKey === key);
+        const newKey = keyChange ? keyChange.newKey : key;
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          newObj[newKey] = renameKeysInObjectWithOrder(obj[key], keyChanges);
+        } else {
+          newObj[newKey] = obj[key];
+        }
+      });
+      return newObj;
+    };
+
+    files.forEach(file => {
+      const filePath = path.join(localeDir, file);
+      const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      const updatedContent = renameKeysInObjectWithOrder(content, keyChanges);
+
+      fs.writeFileSync(filePath, JSON.stringify(updatedContent, null, 2));
+    });
+
+    await generateType();
+    res.json({ success: true, message: "Keys renamed successfully in all locale files" });
+  } catch (error) {
+    console.error("Failed to rename keys in locale files:", error);
+    res.status(500).json({ error: "Failed to rename keys in locale files" });
+  }
+});
+// API to generate type file
+app.post("/api/locale/generateType", async (req, res) => {
+  try {
+    await generateType();
+    res.json({ success: true, message: "Type file generated successfully" });
+  } catch (error) {
+    console.error("Failed to generate type file:", error);
+    res.status(500).json({ error: "Failed to generate type file" });
+  }
+});
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
+});
+export async function startCommand() {
+  var config=await getConfigAsync();
+  var port=config.port || PORT
+  console.log("Starting Cognates UI...");
+  app.listen(port, () => {
+    const url = `http://localhost:${port}`;
+    console.log(`🚀 Cognates UI running at ${url}`);
+    open(url);
+});
+// API to update locale file content
 app.put("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
@@ -202,27 +301,6 @@ app.put("/api/locale/:filePath", async (req, res) => {
     res.status(500).json({ error: "Failed to update locale file" });
   }
 });
-// New API to generate type file
-app.post("/api/locale/generateType", async (req, res) => {
-  try {
-    await generateType();
-    res.json({ success: true, message: "Type file generated successfully" });
-  } catch (error) {
-    console.error("Failed to generate type file:", error);
-    res.status(500).json({ error: "Failed to generate type file" });
-  }
-});
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
-});
-export async function startCommand() {
-  var config=await getConfigAsync();
-  var port=config.port || PORT
-  console.log("Starting Cognates UI...");
-  app.listen(port, () => {
-    const url = `http://localhost:${port}`;
-    console.log(`🚀 Cognates UI running at ${url}`);
-    open(url);
-});
+
 }
 
