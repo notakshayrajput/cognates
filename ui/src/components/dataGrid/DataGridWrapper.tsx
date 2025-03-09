@@ -7,6 +7,7 @@ import DataEditor, {
     Item,
     GridCell,
 } from '@glideapps/glide-data-grid'
+import { on } from 'events'
 
 interface GridRow {
     key: string
@@ -25,7 +26,6 @@ interface DataGridWrapperProps {
     defaultCulture: string
     defaultCultureData: Record<string, any>
     theme: any
-    onEdit: (key: string, value: string | null) => void
 }
 
 const flattenData = (
@@ -82,7 +82,6 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
     defaultCulture,
     theme = {},
     defaultCultureData,
-    onEdit,
 }) => {
     const [collapsedState, setCollapsedState] = useState<
         Record<string, boolean>
@@ -319,8 +318,8 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                             )
                         }
                         updatedData[row] = { ...rowData, key: newKey }
-                        // onUpdate(culture, newStructuredData, defaultCulture, newDefaultData)
-                        onEdit(newKey, rowData.value)
+                        if(onUpdate)
+                        onUpdate(culture, newStructuredData,defaultCulture, newDefaultData)
                     }
 
                     if (col === 1 && !rowData.isGroup) {
@@ -334,9 +333,12 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                             ...rowData,
                             value: newValueText,
                         }
-                        // onUpdate(culture, newStructuredData, defaultCulture, defaultCultureData) // Update source data BEFORE calling setGridData
-                        onEdit(rowData.key, newValueText)
+                        if(onUpdate)
+                        onUpdate(culture,newStructuredData,defaultCulture, defaultCultureData)
                     }
+
+                    console.log('Updated Grid Data:', newStructuredData)
+                    console.log('Updated Default Culture Data:', defaultCultureData)
 
                     return updatedData
                 })

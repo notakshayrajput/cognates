@@ -110,7 +110,6 @@ export default function Localize() {
   const { theme } = useTheme();
   const culture = "fr";
   const defaultCulture = "en";
-  const [editedData, setEditedData] = useState(initialData);
 
   const lightTheme = {
     // bgCell: "oklch(0.98 0.00 106)", // Lightest background
@@ -131,24 +130,10 @@ export default function Localize() {
   };
   const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
 
-  const updateNestedValue = (obj: Record<string, any>, keyPath: string, newValue: any) => {
-    const keys = keyPath.split('.');
-    const newObj = { ...obj }; // Ensure immutability
-    let current = newObj;
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) current[keys[i]] = {}; // Ensure path exists
-      current = current[keys[i]];
-    }
-
-    current[keys[keys.length - 1]] = newValue;
-    return newObj; // Return new reference
-  };
-
-  const handleEdit = (key: string, value: any) => {
-    const updatedData = updateNestedValue(editedData, key, value);
-    setEditedData(updatedData);
-    console.log(culture, updatedData, defaultCulture, initialData);
+  const handleUpdate = (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>) => {
+    
+    console.log('Updated Grid Data:',culture, updatedData);
+    console.log('Updated Default Culture Data:',defaultCulture, updatedDefaultData);
   };
 
   return (
@@ -161,7 +146,7 @@ export default function Localize() {
         defaultCulture={defaultCulture}
         data={initialDataEN}
         defaultCultureData={initialData}
-        onEdit={handleEdit}
+        onUpdate={handleUpdate}
       />
     </LocalizeLayout>
   );
