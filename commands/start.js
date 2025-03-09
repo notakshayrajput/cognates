@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { getConfigAsync,updateConfigAsync } from "../lib/util.js";
+import { getConfigAsync,updateConfigAsync,generateType } from "../lib/util.js";
 import { cultureInfoList } from "../lib/culturesInfo.js";
 import open from "open"; 
 
@@ -134,7 +134,7 @@ app.post("/api/locale/:filePath", async (req, res) => {
     if (!fs.existsSync(defaultFilePath)) {
       return res.status(404).json({ error: "Default language file not found" });
     }
-
+    
     // Read the default language JSON file
     const defaultContent = JSON.parse(fs.readFileSync(defaultFilePath, "utf8"));
 
@@ -170,6 +170,48 @@ app.post("/api/locale/:filePath", async (req, res) => {
   }
 });
 
+
+// New API to update locale file content
+app.put("/api/locale/:filePath", async (req, res) => {
+  try {
+    const config = await getConfigAsync();
+    const { filePath } = req.params;
+    const { content } = req.body;
+
+    if (!filePath || typeof filePath !== "string") {
+      return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
+    }
+
+    const resolvedFilePath = filePath.includes('/')
+      ? path.join(config.localeDir, filePath)
+      : path.join(config.localeDir, `${filePath}.json`);
+
+    if (!fs.existsSync(resolvedFilePath)) {
+      return res.status(404).json({ error: "Locale file not found" });
+    }
+    if(!content || typeof content !== "object") {
+      return res.status(400).json({ error: "Invalid or missing 'content' field" });
+    }
+
+    // Overwrite the content of the locale file
+    fs.writeFileSync(resolvedFilePath, JSON.stringify(content, null, 2));
+
+    res.json({ success: true, message: `Locale file '${filePath}' updated successfully` });
+  } catch (error) {
+    console.error("Failed to update locale file:", error);
+    res.status(500).json({ error: "Failed to update locale file" });
+  }
+});
+// New API to generate type file
+app.post("/api/locale/generateType", async (req, res) => {
+  try {
+    await generateType();
+    res.json({ success: true, message: "Type file generated successfully" });
+  } catch (error) {
+    console.error("Failed to generate type file:", error);
+    res.status(500).json({ error: "Failed to generate type file" });
+  }
+});
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
 });

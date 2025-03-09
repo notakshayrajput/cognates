@@ -45,6 +45,14 @@ public async createLocaleFile(code: string): Promise<{ success: boolean; message
       return { success: false, message: "Failed to create locale file" };
   }
 }
-
+public async updateLocaleFile(filePath: string, data: any): Promise<{ success: boolean; message: string }> {
+  try {
+      const response = await this.httpService.put(`/api/locale/${filePath}`, {content:data});
+      return response;
+  } catch (error) {
+      console.error(`Failed to update locale file (${filePath}):`, error);
+      return { success: false, message: "Failed to update locale file" };
+  }
+}
 
 }

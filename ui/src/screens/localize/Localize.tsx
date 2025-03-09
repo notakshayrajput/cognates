@@ -169,7 +169,14 @@ export default function Localize() {
             
             //const response=await LocaleService.getSingletonInstance().saveLocaleFile(activeTab,content);
            console.log(unsavedData)
+              const response=await LocaleService.getSingletonInstance().updateLocaleFile(unsavedData.culture,unsavedData.content);
+              if(response.success){
+                  alert('Saved Successfully')
             setIsDirty(false);
+              }
+              else{
+                    alert('Failed to save\n'+response.message)
+              }
         }
     }
     
