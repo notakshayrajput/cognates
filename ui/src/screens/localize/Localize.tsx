@@ -15,6 +15,7 @@ import {
 import { Combobox } from '@/components/ui/combobox'
 import { useTheme } from '../../components/theme-provider/theme-provider'
 import DataGridWrapper from '@/components/dataGrid/DataGridWrapper'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function Localize() {
     const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
@@ -26,6 +27,8 @@ export default function Localize() {
     const [defaultContent, setDefaultFileContent] = useState<any>(undefined)
     const [isDirty,setIsDirty]=useState(false);
     const [cultureList, setCultureList] = useState<ICultureInfo[]>([])
+    const [showDialog, setShowDialog] = useState(false)
+    const [pendingTab, setPendingTab] = useState<string | undefined>(undefined)
     useEffect(() => {
         async function fetchLocaleFiles() {
             try {
@@ -87,7 +90,16 @@ export default function Localize() {
         }
     }
     const handleTabChange = async (tab: string) => {
-        setIsDirty(false);
+        if (isDirty) {
+            setPendingTab(tab)
+            setShowDialog(true)
+        } else {
+            await changeTab(tab)
+        }
+    }
+
+    const changeTab = async (tab: string) => {
+        setIsDirty(false)
         await loadFileContent(tab).then(() => {
             setActiveTab(tab)
             console.log(tab, config?.defaultLanguage)
@@ -137,6 +149,18 @@ export default function Localize() {
                 defaultCultureData,
             )
             setIsDirty(true);
+    }
+    const handleDialogConfirm = async () => {
+        setShowDialog(false)
+        if (pendingTab) {
+            await changeTab(pendingTab)
+            setPendingTab(undefined)
+        }
+    }
+
+    const handleDialogCancel = () => {
+        setShowDialog(false)
+        setPendingTab(undefined)
     }
     return (
         <LocalizeLayout>
@@ -237,7 +261,19 @@ export default function Localize() {
                     </div>
                 </div>
             </div>
-            {/*Add  PopOver */}
+            {/* Add PopOver */}
+            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unsaved Changes</DialogTitle>
+                    </DialogHeader>
+                    <p>Changes not saved. If you switch tabs now, the changes will be lost. Save the changes before switching tabs.</p>
+                    <DialogFooter>
+                        <Button onClick={handleDialogCancel}>Cancel</Button>
+                        <Button onClick={handleDialogConfirm}>Change Anyway</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </LocalizeLayout>
     )
 }
