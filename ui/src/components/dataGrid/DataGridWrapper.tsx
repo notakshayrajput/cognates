@@ -20,7 +20,7 @@ interface DataGridWrapperProps {
     height?: string | number
     width?: string | number
     data: Record<string, any>
-    onUpdate?: (updatedData: Record<string, any>, updatedDefaultData: Record<string, any>) => void
+    onUpdate?: (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>) => void
     culture: string
     defaultCulture: string
     defaultCultureData: Record<string, any>
@@ -345,10 +345,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
                     setGridData(flattenData(defaultData, newStructuredData, '', 0, collapsedState)) // Ensure gridData is updated
 
                     if(onUpdate)
-                        onUpdate(newStructuredData, newDefaultData)
-
-                    console.log('Updated Grid Data:', newStructuredData)
-                    console.log('Updated Default Culture Data:', newDefaultData)
+                        onUpdate(culture,newStructuredData,defaultCulture, newDefaultData)
 
                     return updatedData
                 })

@@ -13,18 +13,18 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover'
 import { Combobox } from '@/components/ui/combobox'
-import { useTheme } from "../../components/theme-provider/theme-provider";
+import { useTheme } from '../../components/theme-provider/theme-provider'
 import DataGridWrapper from '@/components/dataGrid/DataGridWrapper'
 
 export default function Localize() {
-    const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
+    const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
     const [config, setConfig] = useState<ICognatesConfig>()
     const [localeFiles, setLocaleFiles] = useState<ILocaleFileInfo[]>([])
     const [openAddPopOver, setOpenAddPopOver] = useState(false)
     const [newCultureCode, setNewCultureCode] = useState('')
     const [content, setFileContent] = useState<any>(undefined)
     const [defaultContent, setDefaultFileContent] = useState<any>(undefined)
-
+    const [isDirty,setIsDirty]=useState(false);
     const [cultureList, setCultureList] = useState<ICultureInfo[]>([])
     useEffect(() => {
         async function fetchLocaleFiles() {
@@ -46,14 +46,14 @@ export default function Localize() {
         if (files.length > 0) {
             let config = await ConfigService.getSingletonInstance().getConfig()
             setConfig(config)
-            loadDefaultFileContent(config);
+            loadDefaultFileContent(config)
             let i = files.findIndex(
                 (x) => x.cultureInfo?.code == config.defaultLanguage,
             )
             let activeTabIndex = i > -1 ? i : 0
-            if(!activeTab)
-            {setActiveTab(files[activeTabIndex].filePath) // Set first file as default tab
-            loadFileContent(files[activeTabIndex].filePath)
+            if (!activeTab) {
+                setActiveTab(files[activeTabIndex].filePath) // Set first file as default tab
+                loadFileContent(files[activeTabIndex].filePath)
             }
         }
     }
@@ -68,62 +68,76 @@ export default function Localize() {
                 await LocaleService.getSingletonInstance().getLocaleFile(
                     filePath,
                 )
-                setFileContent(fileContent)
+            setFileContent(fileContent)
             console.log('Fetched locale file content:', fileContent)
         } catch (error) {
             console.error('Error fetching locale file:', error)
         }
     }
-    const loadDefaultFileContent = async (config:ICognatesConfig)=>{
+    const loadDefaultFileContent = async (config: ICognatesConfig) => {
         try {
             const fileContent =
                 await LocaleService.getSingletonInstance().getLocaleFile(
                     config?.defaultLanguage,
                 )
-                setDefaultFileContent(fileContent)
+            setDefaultFileContent(fileContent)
             console.log('Fetched locale file content:', fileContent)
         } catch (error) {
             console.error('Error fetching locale file:', error)
         }
     }
     const handleTabChange = async (tab: string) => {
-
-        await loadFileContent(tab).then(()=>{
+        setIsDirty(false);
+        await loadFileContent(tab).then(() => {
             setActiveTab(tab)
-            console.log(tab,config?.defaultLanguage)
+            console.log(tab, config?.defaultLanguage)
         })
     }
     const handleAddLocale = async () => {
-        if (!newCultureCode.trim()) return;
-        const localeService = LocaleService.getSingletonInstance();
-        const response = await localeService.createLocaleFile(newCultureCode.trim());
-        alert(response.message); // Replace with a toast if needed
-        setNewCultureCode('');
-        setOpenAddPopOver(false);
-        
+        if (!newCultureCode.trim()) return
+        const localeService = LocaleService.getSingletonInstance()
+        const response = await localeService.createLocaleFile(
+            newCultureCode.trim(),
+        )
+        alert(response.message) // Replace with a toast if needed
+        setNewCultureCode('')
+        setOpenAddPopOver(false)
+
         // Reload locale files
-        await loadTabs();
-    };
-    
-        const { theme } = useTheme()
+        await loadTabs()
+    }
+
+    const { theme } = useTheme()
     const lightTheme = {
         // bgCell: "oklch(0.98 0.00 106)", // Lightest background
-        textDark: "oklch(0.15 0.00 49)", // Dark text
-        textMedium: "oklch(0.37 0.01 68)", // Medium text
-        textLight: "oklch(0.92 0.00 49)", // Light text
-        headerBg: "oklch(0.87 0.00 56)", // Header background
-        rowBg: "oklch(0.97 0.00 106)", // Row background
-      };
-      
-      const darkTheme = {
-        bgCell: "oklch(0.15 0.00 49)", // Darkest background
-        textDark: "oklch(0.98 0.00 106)", // Light text
-        textMedium: "oklch(0.55 0.01 58)", // Medium text
-        textLight: "oklch(0.72 0.01 56)", // Light text
-        headerBg: "oklch(0.22 0.01 56)", // Header background
-        rowBg: "oklch(0.27 0.01 34)", // Row background
-      };
-      const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
+        textDark: 'oklch(0.15 0.00 49)', // Dark text
+        textMedium: 'oklch(0.37 0.01 68)', // Medium text
+        textLight: 'oklch(0.92 0.00 49)', // Light text
+        headerBg: 'oklch(0.87 0.00 56)', // Header background
+        rowBg: 'oklch(0.97 0.00 106)', // Row background
+    }
+
+    const darkTheme = {
+        bgCell: 'oklch(0.15 0.00 49)', // Darkest background
+        textDark: 'oklch(0.98 0.00 106)', // Light text
+        textMedium: 'oklch(0.55 0.01 58)', // Medium text
+        textLight: 'oklch(0.72 0.01 56)', // Light text
+        headerBg: 'oklch(0.22 0.01 56)', // Header background
+        rowBg: 'oklch(0.27 0.01 34)', // Row background
+    }
+    const appliedTheme = theme === 'dark' ? darkTheme : lightTheme
+    const onUpdate=(culture:string,
+        updatedData:any,
+        defaultCulture:string,
+        defaultCultureData:any)=>{
+            console.log(
+                culture,
+                updatedData,
+                defaultCulture,
+                defaultCultureData,
+            )
+            setIsDirty(true);
+    }
     return (
         <LocalizeLayout>
             <div className="flex h-full items-start">
@@ -154,7 +168,7 @@ export default function Localize() {
                                                 key={fileName}
                                                 value={filePath}
                                             >
-                                                {tabLabel}
+                                                {`${tabLabel}${cultureInfo?.code === config?.defaultLanguage ? '⭐' : ''}`}
                                             </TabsTrigger>
                                         )
                                     },
@@ -191,27 +205,35 @@ export default function Localize() {
                             </PopoverContent>
                         </Popover>
                     </div>
-
+                    <div className="flex w-full justify-end mt-2 drop-shadow-lg max-h-30 gap-2">
+                        {config?.defaultLanguage === activeTab?.replace('.json', '') && 
+                            <Button>Generate Type File</Button>}
+                        {isDirty &&
+                            <Button>Save</Button>}
+                            </div>
                     {/* Content Panel (Placeholder for Table) */}
                     <div className="table scroll mt-2 drop-shadow-lg h-[calc(100vh-150px)] overflow-auto">
-                    <p>test</p>
-                    {content && config?.defaultLanguage && defaultContent && activeTab ? (
-    <DataGridWrapper
-        key={activeTab || config.defaultLanguage}
-        theme={appliedTheme}
-        height="400px"
-        width="100%"
-        data={content}
-        defaultCulture={config.defaultLanguage }
-        defaultCultureData={defaultContent}
-        culture={  activeTab.replace('.json', '') }
-        onUpdate={(culture,updatedData,defaultCulture,defaultCultureData) => 
-            console.log(culture,updatedData,defaultCulture,defaultCultureData)
-        }
-    />
-) : (
-    <p>Loading data...</p>
-)}
+                        {content &&
+                        config?.defaultLanguage &&
+                        defaultContent &&
+                        activeTab ? (
+                            <>
+                            <DataGridWrapper
+                                key={activeTab || config.defaultLanguage}
+                                theme={appliedTheme}
+                                height="100%"
+                                width="100%"
+                                data={content}
+                                defaultCulture={config.defaultLanguage}
+                                defaultCultureData={defaultContent}
+                                culture={activeTab.replace('.json', '')}
+                                onUpdate={onUpdate}
+                            />
+                            
+                            </>
+                        ) : (
+                            <p>Loading data...</p>
+                        )}
                     </div>
                 </div>
             </div>

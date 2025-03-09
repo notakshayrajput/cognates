@@ -130,7 +130,7 @@ export default function Localize() {
   };
   const appliedTheme = theme === "dark" ? darkTheme : lightTheme;
 
-  const handleUpdate = (updatedData: Record<string, any>, updatedDefaultData: Record<string, any>) => {
+  const handleUpdate = (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>) => {
     
     console.log('Updated Grid Data:',culture, updatedData);
     console.log('Updated Default Culture Data:',defaultCulture, updatedDefaultData);
@@ -142,9 +142,9 @@ export default function Localize() {
         theme={appliedTheme}
         width={"100%"}
         height={"700px"}
-        culture={"en"}
+        culture={"fr"}
         defaultCulture={defaultCulture}
-        data={initialDataEN}
+        data={initialDataFR}
         defaultCultureData={initialData}
         onUpdate={handleUpdate}
       />
