@@ -2,9 +2,9 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { getConfigAsync,updateConfigAsync,generateType } from "../lib/util.js";
+import { getConfigAsync, updateConfigAsync, generateType } from "../lib/util.js";
 import { cultureInfoList } from "../lib/culturesInfo.js";
-import open from "open"; 
+import open from "open";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -39,7 +39,7 @@ app.post("/api/config", async (req, res) => {
     if (!Array.isArray(newConfig.excludePaths)) {
       return res.status(400).json({ error: "Invalid or missing 'excludePaths' field" });
     }
-    
+
     await updateConfigAsync(newConfig);
     res.json({ success: true, message: "Configuration updated successfully" });
   } catch (error) {
@@ -67,11 +67,11 @@ app.get("/api/locales", async (req, res) => {
   try {
     const config = await getConfigAsync();
     const localeDir = path.resolve(config.localeDir);
-    
+
     if (!fs.existsSync(localeDir)) {
       return res.status(404).json({ error: "Locale directory not found" });
     }
-    let files=[]
+    let files = []
     files = fs.readdirSync(localeDir);
     const jsonFiles = files.filter(file => file.endsWith(".json"));
 
@@ -96,17 +96,17 @@ app.get("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
     const filePath = path.join(config.localeDir, req.params.filePath);
-    
+
     if (fs.existsSync(filePath)) {
       return res.json(JSON.parse(fs.readFileSync(filePath, "utf8")));
     }
-    
+
     // If file does not exist, try default language
     const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
     if (fs.existsSync(defaultFilePath)) {
       return res.json(JSON.parse(fs.readFileSync(defaultFilePath, "utf8")));
     }
-    
+
     return res.status(404).json({ error: "File not found" });
   } catch (error) {
     console.error("Failed to retrieve locale file:", error);
@@ -117,12 +117,12 @@ app.post("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
     const { filePath } = req.params; // filePath 
-    const { code} = req.body; //code is culture code .//is ignored for now
+    const { code } = req.body; //code is culture code .//is ignored for now
 
     if (!filePath || typeof filePath !== "string") {
       return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
     }
-    
+
     const newFilePath = path.join(config.localeDir, `${filePath}.json`);
 
     if (fs.existsSync(newFilePath)) {
@@ -134,7 +134,7 @@ app.post("/api/locale/:filePath", async (req, res) => {
     if (!fs.existsSync(defaultFilePath)) {
       return res.status(404).json({ error: "Default language file not found" });
     }
-    
+
     // Read the default language JSON file
     const defaultContent = JSON.parse(fs.readFileSync(defaultFilePath, "utf8"));
 
@@ -153,9 +153,9 @@ app.post("/api/locale/:filePath", async (req, res) => {
 
     const newLocaleData = {
       //cultureInfo: {
-        //code: filePath,
-        //language: language || "",
-        //country: country || "",
+      //code: filePath,
+      //language: language || "",
+      //country: country || "",
       //},
       ...clearValues(defaultContent),
     };
@@ -170,106 +170,6 @@ app.post("/api/locale/:filePath", async (req, res) => {
   }
 });
 
-// API to rename keys in all locale files
-app.post("/api/locale/key/rename", async (req, res) => {
-  try {
-    const config = await getConfigAsync();
-    const { keyChanges } = req.body;
-
-    if (!Array.isArray(keyChanges)) {
-      return res.status(400).json({ error: "Invalid or missing 'keyChanges' field" });
-    }
-
-    const localeDir = path.resolve(config.localeDir);
-    const files = fs.readdirSync(localeDir).filter(file => file.endsWith(".json"));
-
-    const renameKeysInObject = (obj, keyChanges) => {
-      const newObj = {};
-      Object.keys(obj).forEach(key => {
-        const keyChange = keyChanges.find(kc => kc.oldKey === key);
-        const newKey = keyChange ? keyChange.newKey : key;
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          newObj[newKey] = renameKeysInObject(obj[key], keyChanges);
-        } else {
-          newObj[newKey] = obj[key];
-        }
-      });
-      return newObj;
-    };
-
-    const updateKeys = (obj, keyChanges) => {
-      keyChanges.forEach(({ oldKey, newKey }) => {
-        const keys = oldKey.split('.');
-        const newKeys = newKey.split('.');
-        let current = obj;
-        let newCurrent = obj;
-
-        for (let i = 0; i < keys.length - 1; i++) {
-          if (!current[keys[i]]) return;
-          current = current[keys[i]];
-          if (!newCurrent[newKeys[i]]) newCurrent[newKeys[i]] = {};
-          newCurrent = newCurrent[newKeys[i]];
-        }
-
-        if (current[keys[keys.length - 1]] !== undefined) {
-          newCurrent[newKeys[newKeys.length - 1]] = current[keys[keys.length - 1]];
-          delete current[keys[keys.length - 1]];
-        }
-      });
-    };
-
-    const renameKeysInObjectWithOrder = (obj, keyChanges) => {
-      const newObj = {};
-      Object.keys(obj).forEach(key => {
-        const keyChange = keyChanges.find(kc => kc.oldKey === key);
-        const newKey = keyChange ? keyChange.newKey : key;
-        if (typeof obj[key] === 'object' && obj[key] !== null) {
-          newObj[newKey] = renameKeysInObjectWithOrder(obj[key], keyChanges);
-        } else {
-          newObj[newKey] = obj[key];
-        }
-      });
-      return newObj;
-    };
-
-    files.forEach(file => {
-      const filePath = path.join(localeDir, file);
-      const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
-
-      const updatedContent = renameKeysInObjectWithOrder(content, keyChanges);
-
-      fs.writeFileSync(filePath, JSON.stringify(updatedContent, null, 2));
-    });
-
-    await generateType();
-    res.json({ success: true, message: "Keys renamed successfully in all locale files" });
-  } catch (error) {
-    console.error("Failed to rename keys in locale files:", error);
-    res.status(500).json({ error: "Failed to rename keys in locale files" });
-  }
-});
-// API to generate type file
-app.post("/api/locale/generateType", async (req, res) => {
-  try {
-    await generateType();
-    res.json({ success: true, message: "Type file generated successfully" });
-  } catch (error) {
-    console.error("Failed to generate type file:", error);
-    res.status(500).json({ error: "Failed to generate type file" });
-  }
-});
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
-});
-export async function startCommand() {
-  var config=await getConfigAsync();
-  var port=config.port || PORT
-  console.log("Starting Cognates UI...");
-  app.listen(port, () => {
-    const url = `http://localhost:${port}`;
-    console.log(`🚀 Cognates UI running at ${url}`);
-    open(url);
-});
 // API to update locale file content
 app.put("/api/locale/:filePath", async (req, res) => {
   try {
@@ -288,7 +188,7 @@ app.put("/api/locale/:filePath", async (req, res) => {
     if (!fs.existsSync(resolvedFilePath)) {
       return res.status(404).json({ error: "Locale file not found" });
     }
-    if(!content || typeof content !== "object") {
+    if (!content || typeof content !== "object") {
       return res.status(400).json({ error: "Invalid or missing 'content' field" });
     }
 
@@ -302,5 +202,112 @@ app.put("/api/locale/:filePath", async (req, res) => {
   }
 });
 
+app.post("/api/locale/key/rename", async (req, res) => {
+  try {
+    const config = await getConfigAsync();
+    const { keyChanges } = req.body;
+
+    if (!Array.isArray(keyChanges)) {
+      return res.status(400).json({ error: "Invalid or missing 'keyChanges' field" });
+    }
+
+    const localeDir = path.resolve(config.localeDir);
+    const files = fs.readdirSync(localeDir).filter(file => file.endsWith(".json"));
+
+    files.forEach(file => {
+      const filePath = path.join(localeDir, file);
+      const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      const updatedContent = renameKeys(content, keyChanges);
+
+      fs.writeFileSync(filePath, JSON.stringify(updatedContent, null, 2));
+    });
+
+    await generateType();
+    res.json({ success: true, message: "Keys renamed successfully in all locale files" });
+  } catch (error) {
+    console.error("Failed to rename keys in locale files:", error);
+    res.status(500).json({ error: "Failed to rename keys in locale files" });
+  }
+});
+
+// Function to rename keys while keeping the original order
+function renameKeys(obj, keyChanges) {
+  const keyMap = new Map(keyChanges.map(({ oldKey, newKey }) => [oldKey, newKey]));
+
+  function getNestedKeyPath(key) {
+    return key.split(".");
+  }
+
+  function renameNestedKey(obj, oldKey, newKey) {
+    const oldPath = getNestedKeyPath(oldKey);
+    const newPath = getNestedKeyPath(newKey);
+
+    let current = obj;
+    let parent = null;
+    let lastOldKey = oldPath.pop();
+    let lastNewKey = newPath.pop();
+
+    // Traverse to the target key
+    for (const segment of oldPath) {
+      if (!current[segment]) return; // Key path not found, return early
+      parent = current;
+      current = current[segment];
+    }
+
+    if (current && lastOldKey in current) {
+      current[lastNewKey] = current[lastOldKey];
+      delete current[lastOldKey];
+    }
+  }
+
+  function processObject(currentObj) {
+    if (typeof currentObj !== "object" || currentObj === null) return currentObj;
+
+    const newObj = Array.isArray(currentObj) ? [...currentObj] : {};
+
+    // Apply renaming at the correct level
+    Object.keys(currentObj).forEach((key) => {
+      if (typeof currentObj[key] === "object") {
+        newObj[key] = processObject(currentObj[key]);
+      } else {
+        newObj[key] = currentObj[key];
+      }
+    });
+
+    // Apply renaming only after processing children to preserve order
+    keyMap.forEach((newKey, oldKey) => {
+      renameNestedKey(newObj, oldKey, newKey);
+    });
+
+    return newObj;
+  }
+
+  return processObject(obj);
 }
 
+// API to generate type file
+app.post("/api/locale/generateType", async (req, res) => {
+  try {
+    await generateType();
+    res.json({ success: true, message: "Type file generated successfully" });
+  } catch (error) {
+    console.error("Failed to generate type file:", error);
+    res.status(500).json({ error: "Failed to generate type file" });
+  }
+});
+
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
+});
+
+export async function startCommand() {
+  var config = await getConfigAsync();
+  var port = config.port || PORT;
+  console.log("Starting Cognates UI...");
+  app.listen(port, () => {
+    const url = `http://localhost:${port}`;
+    console.log(`🚀 Cognates UI running at ${url}`);
+    open(url);
+  });
+}
