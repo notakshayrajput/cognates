@@ -142,9 +142,9 @@ export default function Localize() {
         theme={appliedTheme}
         width={"100%"}
         height={"700px"}
-        culture={"fr"}
+        culture={"en"}
         defaultCulture={defaultCulture}
-        data={initialDataFR}
+        data={initialDataEN}
         defaultCultureData={initialData}
         onUpdate={handleUpdate}
       />

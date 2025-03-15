@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "cd \"ui\" && npm run dev",
     "build": "cd \"ui\" && npm run build",
-    "start": "cd \"Test Environment\" && npx cognates start",
+    "start": "cd \"../../Test Environment\" && npx cognates start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },

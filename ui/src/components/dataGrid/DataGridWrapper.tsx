@@ -233,8 +233,7 @@ const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
 
                 if (col === 0) {
                     // Display key name without full path
-                    const displayKey =
-                        rowData.key.split('.').pop() || rowData.key
+                    const displayKey = rowData.key.split('.').pop() || rowData.key
                     const prefix = rowData.isGroup
                         ? rowData.collapsed
                             ? '▶ '
