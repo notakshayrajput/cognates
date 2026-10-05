@@ -82,6 +82,10 @@ To add a new CLI command:
    ```
 This will launch the UI in the browser.
 
+## Test a local build in the sample app
+
+Run `npm run install:local` from the repository root. It builds the Cognates UI, runs `npm link` in this repository, then runs `npm link cognates` in `Test Environment`. The sample app now uses your current checkout, so rebuilding updates the linked package without publishing it.
+
 # License
 
 This package is not open for modifications. Users must credit the author when using Cognates.

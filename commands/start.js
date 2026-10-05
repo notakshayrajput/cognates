@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { getConfigAsync, updateConfigAsync, generateType } from "../lib/util.js";
 import { cultureInfoList } from "../lib/culturesInfo.js";
+import { emptyLocaleValues } from "../lib/locale-template.js";
 import open from "open";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -116,17 +117,16 @@ app.get("/api/locale/:filePath", async (req, res) => {
 app.post("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
-    const { filePath } = req.params; // filePath 
-    const { code } = req.body; //code is culture code .//is ignored for now
+    const { filePath } = req.params;
 
-    if (!filePath || typeof filePath !== "string") {
-      return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
+    if (!cultureInfoList.some(culture => culture.code === filePath)) {
+      return res.status(400).json({ error: "Select a valid locale" });
     }
 
     const newFilePath = path.join(config.localeDir, `${filePath}.json`);
 
     if (fs.existsSync(newFilePath)) {
-      return res.status(400).json({ error: "Locale file already exists" });
+      return res.status(409).json({ error: "Locale file already exists" });
     }
 
     const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
@@ -135,33 +135,9 @@ app.post("/api/locale/:filePath", async (req, res) => {
       return res.status(404).json({ error: "Default language file not found" });
     }
 
-    // Read the default language JSON file
     const defaultContent = JSON.parse(fs.readFileSync(defaultFilePath, "utf8"));
-
-    // Function to recursively replace values with undefined
-    const clearValues = (obj) => {
-      if (typeof obj === "object" && obj !== null) {
-        return Object.fromEntries(
-          Object.entries(obj).map(([key, value]) => [
-            key,
-            typeof value === "object" && value !== null ? clearValues(value) : undefined,
-          ])
-        );
-      }
-      return obj; // Return as is if not an object
-    };
-
-    const newLocaleData = {
-      //cultureInfo: {
-      //code: filePath,
-      //language: language || "",
-      //country: country || "",
-      //},
-      ...clearValues(defaultContent),
-    };
-
-    // Write the new locale file
-    fs.writeFileSync(newFilePath, JSON.stringify(newLocaleData, null, 2));
+    const newLocaleData = emptyLocaleValues(defaultContent);
+    fs.writeFileSync(newFilePath, JSON.stringify(newLocaleData, null, 2), { flag: "wx" });
 
     res.json({ success: true, message: `Locale file '${filePath}.json' created successfully` });
   } catch (error) {

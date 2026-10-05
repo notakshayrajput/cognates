@@ -7,22 +7,18 @@ import { PlusIcon } from 'lucide-react'
 import './Localize.css'
 import { Button } from '@/components/ui/button'
 import { ConfigService } from '@/services/config.service'
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover'
-import { Combobox } from '@/components/ui/combobox'
 import { useTheme } from '../../components/theme-provider/theme-provider'
 import DataGridWrapper from '@/components/dataGrid/DataGridWrapper'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 export default function Localize() {
     const [activeTab, setActiveTab] = useState<string | undefined>(undefined)
     const [config, setConfig] = useState<ICognatesConfig>()
     const [localeFiles, setLocaleFiles] = useState<ILocaleFileInfo[]>([])
-    const [openAddPopOver, setOpenAddPopOver] = useState(false)
+    const [openAddDialog, setOpenAddDialog] = useState(false)
     const [newCultureCode, setNewCultureCode] = useState('')
+    const [addLocaleError, setAddLocaleError] = useState('')
+    const [isAddingLocale, setIsAddingLocale] = useState(false)
     const [content, setFileContent] = useState<any>(undefined)
     const [defaultContent, setDefaultFileContent] = useState<any>(undefined)
     const [isDirty, setIsDirty] = useState(false)
@@ -116,38 +112,55 @@ export default function Localize() {
     }
 
     const handleAddLocale = async () => {
-        if (!newCultureCode.trim()) return
+        const code = newCultureCode.trim()
+        if (!code || isAddingLocale) return
+        if (isDirty) {
+            setAddLocaleError('Save your current changes before adding a locale.')
+            return
+        }
+        setIsAddingLocale(true)
+        setAddLocaleError('')
         const localeService = LocaleService.getSingletonInstance()
-        const response = await localeService.createLocaleFile(
-            newCultureCode.trim(),
-        )
-        alert(response.message) // Replace with a toast if needed
+        const response = await localeService.createLocaleFile(code)
+        setIsAddingLocale(false)
+        if (!response.success) {
+            setAddLocaleError(response.message)
+            return
+        }
+        setLocaleFiles(response.localeFiles ?? [])
         setNewCultureCode('')
-        setOpenAddPopOver(false)
-
-        // Reload locale files
-        await loadTabs()
+        setOpenAddDialog(false)
+        await changeTab(`${code}.json`)
     }
 
     const { theme } = useTheme()
+    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
     const lightTheme = {
-        // bgCell: "oklch(0.98 0.00 106)", // Lightest background
-        textDark: 'oklch(0.15 0.00 49)', // Dark text
-        textMedium: 'oklch(0.37 0.01 68)', // Medium text
-        textLight: 'oklch(0.92 0.00 49)', // Light text
-        headerBg: 'oklch(0.87 0.00 56)', // Header background
-        rowBg: 'oklch(0.97 0.00 106)', // Row background
+        bgCell: 'oklch(0.98 0.00 106)',
+        bgHeader: 'oklch(0.92 0.00 49)',
+        bgHeaderHasFocus: 'oklch(0.87 0.00 56)',
+        bgHeaderHovered: 'oklch(0.87 0.00 56)',
+        textDark: 'oklch(0.15 0.00 49)',
+        textMedium: 'oklch(0.37 0.01 68)',
+        textHeader: 'oklch(0.15 0.00 49)',
+        textHeaderSelected: 'oklch(0.15 0.00 49)',
     }
 
     const darkTheme = {
-        bgCell: 'oklch(0.15 0.00 49)', // Darkest background
-        textDark: 'oklch(0.98 0.00 106)', // Light text
-        textMedium: 'oklch(0.55 0.01 58)', // Medium text
-        textLight: 'oklch(0.72 0.01 56)', // Light text
-        headerBg: 'oklch(0.22 0.01 56)', // Header background
-        rowBg: 'oklch(0.27 0.01 34)', // Row background
+        bgCell: 'oklch(0.15 0.00 49)',
+        bgHeader: 'oklch(0.22 0.01 56)',
+        bgHeaderHasFocus: 'oklch(0.27 0.01 34)',
+        bgHeaderHovered: 'oklch(0.27 0.01 34)',
+        textDark: 'oklch(0.98 0.00 106)',
+        textMedium: 'oklch(0.72 0.01 56)',
+        textHeader: 'oklch(0.98 0.00 106)',
+        textHeaderSelected: 'oklch(0.98 0.00 106)',
+        borderColor: 'oklch(0.37 0.01 68)',
     }
-    const appliedTheme = theme === 'dark' ? darkTheme : lightTheme
+    const appliedTheme = isDark ? darkTheme : lightTheme
+    const availableCultures = cultureList.filter(
+        culture => !localeFiles.some(file => file.fileName === `${culture.code}.json`),
+    )
 
     const onUpdate = (
         culture: string,
@@ -218,12 +231,6 @@ export default function Localize() {
         setShowKeyChangeDialog(false)
     }
 
-    const handleSaveFromDialog = async () => {
-        handleSave().then(() => {
-            handleDialogConfirm()
-        })
-    }
-
     return (
         <LocalizeLayout>
             <div className="flex h-full items-start">
@@ -262,35 +269,51 @@ export default function Localize() {
                             </TabsList>
                         </Tabs>
                         <div className="flex w-fit justify-end drop-shadow-lg max-h-30 gap-2">
-                        <Popover
-                            open={openAddPopOver}
-                            onOpenChange={setOpenAddPopOver}
-                        >
-                            <PopoverTrigger asChild>
-                                <Button className="flex tabs-list drop-shadow-lg  ml-2 w-10">
-                                    <PlusIcon />
+                        <Dialog open={openAddDialog} onOpenChange={(open) => {
+                            setOpenAddDialog(open)
+                            if (!open) {
+                                setNewCultureCode('')
+                                setAddLocaleError('')
+                            }
+                        }}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="ml-2 shrink-0">
+                                    <PlusIcon /> Add locale
                                 </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="flex w-auto p-4">
-                                <Combobox
-                                    className="flex"
-                                    options={cultureList.map((culture) => ({
-                                        label: `${culture.language}${culture.country ? ` (${culture.country})` : ''}`,
-                                        value: culture.code,
-                                    }))}
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add locale</DialogTitle>
+                                    <DialogDescription>
+                                        Create a JSON file with the same keys as the default locale and empty values.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <label htmlFor="new-locale-code" className="text-sm font-medium">Locale</label>
+                                <select
+                                    id="new-locale-code"
+                                    className="border-input bg-background text-foreground h-10 w-full rounded-md border px-3"
                                     value={newCultureCode}
-                                    onChange={setNewCultureCode}
-                                    placeholder="Select a culture code"
-                                />
-                                <Button
-                                    className="flex tabs-list drop-shadow-lg h-auto ml-2 w-auto"
-                                    onClick={handleAddLocale}
+                                    onChange={(event) => {
+                                        setNewCultureCode(event.target.value)
+                                        setAddLocaleError('')
+                                    }}
                                 >
-                                    Add Culture
-                                    <PlusIcon />
-                                </Button>
-                            </PopoverContent>
-                        </Popover>
+                                    <option value="">Select a locale</option>
+                                    {availableCultures.map(culture => (
+                                        <option key={culture.code} value={culture.code}>
+                                            {culture.language}{culture.country ? ` (${culture.country})` : ''} — {culture.code}
+                                        </option>
+                                    ))}
+                                </select>
+                                {addLocaleError && <p role="alert" className="text-destructive text-sm">{addLocaleError}</p>}
+                                <DialogFooter>
+                                    <Button variant="outline" onClick={() => setOpenAddDialog(false)}>Cancel</Button>
+                                    <Button onClick={handleAddLocale} disabled={!newCultureCode || isAddingLocale}>
+                                        {isAddingLocale ? 'Adding...' : 'Add locale'}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
                         {(isDirty || trackedKeyChanges.length>0) &&
                             <Button onClick={handleSave}>Save</Button>
                             }

@@ -42,16 +42,15 @@ export class LocaleService {
         localeFiles?: ILocaleFileInfo[]
     }> {
         try {
-            const filePath = code
             const response = await this.httpService.post(
-                `/api/locale/${filePath}`,
+                `/api/locale/${encodeURIComponent(code)}`,
                 { code },
             )
             const updatedLocaleFiles = await this.getLocaleFiles() // Fetch updated list
             return { ...response, localeFiles: updatedLocaleFiles }
         } catch (error) {
             console.error(`Failed to create locale file (${code}.json):`, error)
-            return { success: false, message: 'Failed to create locale file' }
+            return { success: false, message: error instanceof Error ? error.message : 'Failed to create locale file' }
         }
     }
     public async updateLocaleFile(

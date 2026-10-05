@@ -1,6 +1,6 @@
 export class HttpService {
     private static instance: HttpService;
-  
+
     private constructor() {}
   
     public static getSingletonInstance(): HttpService {
@@ -21,11 +21,11 @@ export class HttpService {
         });
         const data = await response.json();
         if (!response.ok) {
-          throw data;
+          throw new Error(data.error || `Request failed (${response.status})`);
         }
         return data;
       } catch (error) {
-        throw new Error(error instanceof Error ? error.message : "Network error");
+        throw error instanceof Error ? error : new Error("Network error");
       }
     }
   
@@ -45,4 +45,3 @@ export class HttpService {
       return this.request("DELETE", url);
     }
   }
-  
