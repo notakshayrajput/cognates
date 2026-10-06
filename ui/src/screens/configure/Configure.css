@@ -1,0 +1,99 @@
+.configure-page { max-width: 1120px; margin: 0 auto; }
+
+.configure-page__heading { margin: 8px 0 26px; }
+.configure-page__heading > span {
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.15em;
+}
+.configure-page__heading h1 {
+  margin: 6px 0;
+  font-size: clamp(28px, 3vw, 34px);
+  font-weight: 680;
+  letter-spacing: -0.045em;
+}
+.configure-page__heading p {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.configure-page__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(250px, 0.8fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.configure-page__card,
+.configure-page__help {
+  gap: 22px;
+  padding-block: 26px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-panel);
+}
+
+.configure-page__card [data-slot="card-header"],
+.configure-page__card [data-slot="card-content"],
+.configure-page__card [data-slot="card-footer"],
+.configure-page__help [data-slot="card-header"],
+.configure-page__help [data-slot="card-content"] {
+  padding-inline: clamp(20px, 3vw, 32px);
+}
+
+.configure-page__card [data-slot="card-title"],
+.configure-page__help [data-slot="card-title"] {
+  font-size: 17px;
+  letter-spacing: -0.025em;
+}
+
+.configure-page__fields > label {
+  display: block;
+  margin: 20px 0 7px;
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.configure-page__fields > label:first-child { margin-top: 0; }
+.configure-page__fields > div:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.configure-page__fields input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+}
+.configure-page__fields input[type="checkbox"] + label { margin: 0; }
+
+.configure-page__fields input[type="text"],
+.configure-page__fields input[type="number"] {
+  height: 39px;
+  padding: 8px 11px;
+  border: 1px solid var(--input);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 13px;
+}
+
+.configure-page__fields input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.configure-page__help [data-slot="card-content"] {
+  min-height: 80px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+@media (max-width: 800px) {
+  .configure-page__grid { grid-template-columns: 1fr; }
+}

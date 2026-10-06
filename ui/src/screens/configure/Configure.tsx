@@ -8,6 +8,7 @@ import { ICognatesConfig, ICultureInfo } from "@/types";
 import { cn } from "@/lib/utils"; 
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import "./Configure.css";
 
 export default function Configure() {
   const [config, setConfig] = useState<ICognatesConfig>({
@@ -176,15 +177,21 @@ export default function Configure() {
 
   return (
     <MainLayout>
-      <div className="flex flex-col md:flex-row gap-6 p-6">
+      <div className="configure-page">
+        <div className="configure-page__heading">
+          <span>WORKSPACE SETTINGS</span>
+          <h1>Configuration</h1>
+          <p>Set the paths and language rules Cognates uses for your project.</p>
+        </div>
+        <div className="configure-page__grid">
         {/* Configuration Form */}
-        <Card className="w-full md:w-2/3 p-4">
+        <Card className="configure-page__card">
           <CardHeader>
             <CardTitle>Configuration</CardTitle>
           </CardHeader>
 
           {loading ? (
-          <CardContent>
+          <CardContent className="configure-page__fields">
               <>
               <Skeleton className="h-4 w-1/2 mb-4" />
                 <Skeleton className="h-7 w-full mb-6" />
@@ -200,14 +207,14 @@ export default function Configure() {
               </CardContent>
             ):(
                 
-          <CardContent>
+          <CardContent className="configure-page__fields">
             {/* Default Language */}
-            <label className="block mb-2">Default Language:</label>
+            <label className="block mb-2">Default language</label>
             <Combobox
-              options={cultureList.map((lang) => ({
+              options={cultureList.length ? cultureList.map((lang) => ({
                 label: `${lang.language}${lang.country ? ` (${lang.country})` : ""}`,
                 value: lang.code,
-              }))}
+              })) : [{ label: config.defaultLanguage.toUpperCase(), value: config.defaultLanguage }]}
               value={config.defaultLanguage}
               onChange={(value) => handleChange(value, "defaultLanguage")}
               onFocus={() => setFocusedField("defaultLanguage")}
@@ -224,54 +231,54 @@ export default function Configure() {
                 onChange={handleChange}
                 onFocus={() => setFocusedField("autoDetectLanguage")}
               />
-              <label className="ml-2">Auto Detect Language</label>
+              <label className="ml-2">Auto detect language</label>
             </div>
 
             {/* Source Folder */}
-            <label className="block mt-4">Source Folder:</label>
+            <label className="block mt-4">Source folder</label>
             <input
               type="text"
               name="source"
               value={config.source}
               onChange={handleChange}
               onFocus={() => setFocusedField("source")}
-              className={cn("w-full p-2 border rounded", errors.source && "border-red-500")}
+              className={cn("w-full", errors.source && "border-red-500")}
             />
             {errors.source && <p className="text-red-500 text-sm">Source folder is required</p>}
 
             {/* Port Number */}
-            <label className="block mt-4">Port Number:</label>
+            <label className="block mt-4">Port number</label>
             <input
               type="number"
               name="port"
               value={config.port}
               onChange={handleChange}
               onFocus={() => setFocusedField("port")}
-              className={cn("w-full p-2 border rounded", errors.port && "border-red-500")}
+              className={cn("w-full", errors.port && "border-red-500")}
             />
             {errors.port && <p className="text-red-500 text-sm">Port number is required</p>}
 
             {/* Locale Directory */}
-            <label className="block mt-4">Locale Directory:</label>
+            <label className="block mt-4">Locale directory</label>
             <input
               type="text"
               name="localeDir"
               value={config.localeDir}
               onChange={handleChange}
               onFocus={() => setFocusedField("localeDir")}
-              className={cn("w-full p-2 border rounded", errors.localeDir && "border-red-500")}
+              className={cn("w-full", errors.localeDir && "border-red-500")}
             />
             {errors.localeDir && <p className="text-red-500 text-sm">Localization directory is required</p>}
 
             {/* Exclude Paths */}
-            <label className="block mt-4">Exclude Paths (comma-separated):</label>
+            <label className="block mt-4">Exclude paths <span className="text-muted-foreground font-normal">(comma separated)</span></label>
             <input 
               type="text" 
               name="excludePaths" 
               value={config.excludePaths.join(", ")} 
               onChange={handleArrayChange} 
               onFocus={() => setFocusedField("excludePaths")}
-              className="w-full p-2 border rounded" 
+              className="w-full"
             />
           </CardContent>
         )}
@@ -281,18 +288,19 @@ export default function Configure() {
         </Card>
 
         {/* Dynamic Description Panel */}
-        <Card className="w-full md:w-1/3 p-4">
+        <Card className="configure-page__help">
         
             <CardHeader>
-                <CardTitle>{focusedField ? info[focusedField].title : ""}</CardTitle>
+                <CardTitle>{focusedField ? info[focusedField].title : "Quick guide"}</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-gray-600">
-                    {focusedField ? info[focusedField].description : ""}
+                <p className="text-muted-foreground">
+                    {focusedField ? info[focusedField].description : "Select a field to see how it affects your localization workspace."}
                 </p>
             </CardContent>
         
         </Card>
+        </div>
       </div>
     </MainLayout>
   );
