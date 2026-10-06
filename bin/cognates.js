@@ -4,6 +4,7 @@ import { program } from "commander";
 import { setupCommand } from "../commands/setup.js";
 import { startCommand } from "../commands/start.js";
 import { generateTypeCommand } from "../commands/generate-type.js";
+import { checkCommand } from "../commands/check.js";
 
 program
   .command("setup")
@@ -25,5 +26,11 @@ program
     .action(() => {
       generateTypeCommand();
     });
+
+program
+  .command("check")
+  .description("Check locale files against the default language")
+  .option("--strict", "Exit with an error if any locale issues are found")
+  .action(checkCommand);
 
 program.parse(process.argv);

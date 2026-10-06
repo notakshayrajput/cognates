@@ -26,6 +26,14 @@ Initializes `cognates.config.js` (or `.ts`) in your project.
 
 Starts the Cognates UI in the browser for managing localization files.
 
+`npx cognates generate-type`
+
+Generates `locale.ts` from the default language JSON file.
+
+`npx cognates check`
+
+Checks each locale against the default language and reports missing or extra keys, empty translations, unexpected value types, and mismatched `{name}` or `{0}` placeholders. It does not change any files. Use `npx cognates check --strict` in CI to exit with a nonzero status when issues are found.
+
 # Adding New Commands
 To add a new CLI command:
 1. Create a new file in the `commands/` folder, e.g., `commands/newCommand.js`.
