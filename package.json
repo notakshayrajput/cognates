@@ -1,6 +1,6 @@
 {
   "name": "cognates",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI and local browser editor for managing JSON translations and checking locale files.",
   "main": "index.js",
   "types": "index.d.ts",
@@ -52,7 +52,14 @@
     "type": "git",
     "url": "git+https://github.com/notakshayrajput/cognates.git"
   },
-  "keywords": ["i18n", "localization", "translations", "locale", "cli", "json"],
+  "keywords": [
+    "i18n",
+    "localization",
+    "translations",
+    "locale",
+    "cli",
+    "json"
+  ],
   "author": "Akshay Rajput",
   "license": "ISC",
   "engines": {
