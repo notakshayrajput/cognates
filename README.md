@@ -37,12 +37,12 @@ Add your source strings to `cognates/en.json` as JSON. The editor can create ano
 | --- | --- |
 | `npx cognates setup` | Create a config and the default locale file when missing. |
 | `npx cognates start` | Open the local browser editor. |
-| `npx cognates generate-type` | Write `locale.ts` beside the default locale JSON. |
+| `npx cognates generate-type` | Write `locale.ts` in `localeDir` from the default locale JSON. |
 | `npx cognates check` | Report translation issues without editing files. |
 | `npx cognates check --strict` | Exit with an error when issues are found, suitable for CI. |
 | `npx cognates --version` | Print the installed package version. |
 
-`check` compares every other JSON file in `localeDir` with the default language file. It reports missing and extra keys, empty values, unexpected value types, and mismatched placeholders such as `{name}` or `{0}`. Add `npx cognates check --strict` to your CI workflow to reject incomplete translations.
+`check` compares every locale file matching `localeFilePattern` with the default language file. It reports missing and extra keys, empty values, unexpected value types, and mismatched placeholders such as `{name}` or `{0}`. Add `npx cognates check --strict` to your CI workflow to reject incomplete translations.
 
 ## Configuration
 
@@ -57,11 +57,23 @@ export default defineConfig({
   source: 'src/',
   port: 2410,
   localeDir: 'cognates/',
+  localeFilePattern: '{locale}.json',
   excludePaths: ['/assets/*'],
 });
 ```
 
-If you installed the unscoped package, import from `cognates` instead. `setup` writes the correct import automatically. For a CommonJS project, use `const { defineConfig } = require('@akshay-rajput/cognates')` and `module.exports = defineConfig({ ... })` instead. Use a project relative `localeDir`, such as `cognates/`; the CLI resolves it from the directory where you run it. `defaultLanguage` names the source JSON file, such as `en.json`. `port` controls the local editor port. `source`, `excludePaths`, and `autoDetectLanguage` are stored as configuration settings; the current CLI does not scan source code or select a language in your application at runtime.
+If you installed the unscoped package, import from `cognates` instead. `setup` writes the correct import automatically. For a CommonJS project, use `const { defineConfig } = require('@akshay-rajput/cognates')` and `module.exports = defineConfig({ ... })` instead. Use a project relative `localeDir`, such as `cognates/`; the CLI resolves it from the directory where you run it. `defaultLanguage` names the source locale code, such as `en`. `port` controls the local editor port. `source`, `excludePaths`, and `autoDetectLanguage` are stored as configuration settings; the current CLI does not scan source code or select a language in your application at runtime.
+
+### Locale folders
+
+To use one JSON file per language folder, set:
+
+```js
+localeDir: 'src/i18n',
+localeFilePattern: '{locale}/translation.json',
+```
+
+With `defaultLanguage: 'en'`, Cognates reads `src/i18n/en/translation.json` and finds other locales such as `src/i18n/es/translation.json`. `setup` creates the default file at that path if it is missing. The editor creates new locale folders and `translation.json` files as needed; `check` and key renaming use the same layout. You can substitute another fixed JSON filename, such as `{locale}/common.json`. The default pattern remains `{locale}.json` for existing configs. Cognates only looks at immediate locale folders and the configured JSON filename; it does not scan nested namespaces or mix both layouts. Generated `locale.ts` is written in `localeDir` for either layout.
 
 ## Development and release
 

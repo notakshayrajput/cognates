@@ -75,6 +75,11 @@
   border-bottom: 1px solid var(--grid-line);
 }
 
+.cognates-grid__rapid .ig-viewport {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
 .cognates-grid__level > .cognates-grid__leaf-table:first-child {
   border-top: 0;
 }

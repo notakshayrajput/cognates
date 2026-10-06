@@ -5,17 +5,13 @@ import { fileURLToPath } from "url";
 import { getConfigAsync, updateConfigAsync, generateType } from "../lib/util.js";
 import { cultureInfoList } from "../lib/culturesInfo.js";
 import { emptyLocaleValues } from "../lib/locale-template.js";
+import { listLocaleFiles, localeCode, localeFilePath, localeFilePattern } from "../lib/locale-files.js";
 import open from "open";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = 2410;
 const uiIndex = path.join(__dirname, "../ui/dist/index.html");
-
-function localeFileName(value) {
-  if (!/^[A-Za-z0-9_-]+(?:\.json)?$/.test(value)) return null;
-  return value.endsWith('.json') ? value : `${value}.json`;
-}
 
 // Serve React UI
 app.use(express.static(path.join(__dirname, "../ui/dist")));
@@ -42,6 +38,11 @@ app.post("/api/config", async (req, res) => {
     }
     if (!newConfig.localeDir || typeof newConfig.localeDir !== "string") {
       return res.status(400).json({ error: "Invalid or missing 'localeDir' field" });
+    }
+    try {
+      localeFilePattern(newConfig);
+    } catch (error) {
+      return res.status(400).json({ error: error.message });
     }
     if (!Array.isArray(newConfig.excludePaths)) {
       return res.status(400).json({ error: "Invalid or missing 'excludePaths' field" });
@@ -78,17 +79,11 @@ app.get("/api/locales", async (req, res) => {
     if (!fs.existsSync(localeDir)) {
       return res.status(404).json({ error: "Locale directory not found" });
     }
-    let files = []
-    files = fs.readdirSync(localeDir);
-    const jsonFiles = files.filter(file => file.endsWith(".json"));
-
-    const result = jsonFiles.map(file => {
-      const filePath = path.relative(localeDir, path.join(localeDir, file));
-      const cultureInfo = cultureInfoList.find(lang => lang.code === file.replace(".json", ""));
+    const result = listLocaleFiles(config).map(file => {
+      const cultureInfo = cultureInfoList.find(lang => lang.code === file.code);
 
       return {
-        fileName: file,
-        filePath: filePath,
+        ...file,
         cultureInfo: cultureInfo || undefined,
       };
     });
@@ -102,16 +97,16 @@ app.get("/api/locales", async (req, res) => {
 app.get("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
-    const fileName = localeFileName(req.params.filePath);
-    if (!fileName) return res.status(400).json({ error: "Invalid locale filename" });
-    const filePath = path.resolve(config.localeDir, fileName);
+    const code = localeCode(req.params.filePath);
+    if (!code) return res.status(400).json({ error: "Invalid locale code" });
+    const filePath = localeFilePath(config, code);
 
     if (fs.existsSync(filePath)) {
       return res.json(JSON.parse(fs.readFileSync(filePath, "utf8")));
     }
 
     // If file does not exist, try default language
-    const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
+    const defaultFilePath = localeFilePath(config, config.defaultLanguage);
     if (fs.existsSync(defaultFilePath)) {
       return res.json(JSON.parse(fs.readFileSync(defaultFilePath, "utf8")));
     }
@@ -131,13 +126,13 @@ app.post("/api/locale/:filePath", async (req, res) => {
       return res.status(400).json({ error: "Select a valid locale" });
     }
 
-    const newFilePath = path.join(config.localeDir, `${filePath}.json`);
+    const newFilePath = localeFilePath(config, filePath);
 
     if (fs.existsSync(newFilePath)) {
       return res.status(409).json({ error: "Locale file already exists" });
     }
 
-    const defaultFilePath = path.join(config.localeDir, `${config.defaultLanguage}.json`);
+    const defaultFilePath = localeFilePath(config, config.defaultLanguage);
 
     if (!fs.existsSync(defaultFilePath)) {
       return res.status(404).json({ error: "Default language file not found" });
@@ -145,9 +140,10 @@ app.post("/api/locale/:filePath", async (req, res) => {
 
     const defaultContent = JSON.parse(fs.readFileSync(defaultFilePath, "utf8"));
     const newLocaleData = emptyLocaleValues(defaultContent);
+    fs.mkdirSync(path.dirname(newFilePath), { recursive: true });
     fs.writeFileSync(newFilePath, JSON.stringify(newLocaleData, null, 2), { flag: "wx" });
 
-    res.json({ success: true, message: `Locale file '${filePath}.json' created successfully` });
+    res.json({ success: true, message: `Locale '${filePath}' created successfully` });
   } catch (error) {
     console.error("Failed to create locale file:", error);
     res.status(500).json({ error: "Failed to create locale file" });
@@ -165,9 +161,9 @@ app.put("/api/locale/:filePath", async (req, res) => {
       return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
     }
 
-    const fileName = localeFileName(filePath);
-    if (!fileName) return res.status(400).json({ error: "Invalid locale filename" });
-    const resolvedFilePath = path.resolve(config.localeDir, fileName);
+    const code = localeCode(filePath);
+    if (!code) return res.status(400).json({ error: "Invalid locale code" });
+    const resolvedFilePath = localeFilePath(config, code);
 
     if (!fs.existsSync(resolvedFilePath)) {
       return res.status(404).json({ error: "Locale file not found" });
@@ -180,7 +176,7 @@ app.put("/api/locale/:filePath", async (req, res) => {
     fs.writeFileSync(resolvedFilePath, JSON.stringify(content, null, 2));
 
     res.json({ success: true, message: `Locale file '${filePath}' updated successfully` });
-    if(config.defaultLanguage == filePath.replace(".json","")){
+    if(config.defaultLanguage === code){
       await generateType();
     }
   } catch (error) {
@@ -198,11 +194,10 @@ app.post("/api/locale/key/rename", async (req, res) => {
       return res.status(400).json({ error: "Invalid or missing 'keyChanges' field" });
     }
 
-    const localeDir = path.resolve(config.localeDir);
-    const files = fs.readdirSync(localeDir).filter(file => file.endsWith(".json"));
+    const files = listLocaleFiles(config);
 
     files.forEach(file => {
-      const filePath = path.join(localeDir, file);
+      const filePath = localeFilePath(config, file.code);
       const content = JSON.parse(fs.readFileSync(filePath, "utf8"));
 
       const updatedContent = renameKeys(content, keyChanges);

@@ -17,6 +17,7 @@ export default function Configure() {
     source: "src/",
     port: 2410,
     localeDir: "cognates/",
+    localeFilePattern: "{locale}.json",
     excludePaths: ['/assets/*'],
   });
 
@@ -31,7 +32,7 @@ export default function Configure() {
           const configService = ConfigService.getSingletonInstance();
     
           const configData = await configService.getConfig();
-          setConfig(configData);  // No need for "error in configData" check
+          setConfig({ ...configData, localeFilePattern: configData.localeFilePattern ?? "{locale}.json" });
     
           const cultureInfoList = await configService.getCultureInfo();
           setCultureList(cultureInfoList);
@@ -74,7 +75,7 @@ export default function Configure() {
 
   const handleSave = async (config: ICognatesConfig, setErrors: (errors: Record<string, boolean>) => void) => {
     try {
-      const requiredFields: (keyof ICognatesConfig)[] = ["defaultLanguage", "source", "port", "localeDir"];
+      const requiredFields: (keyof ICognatesConfig)[] = ["defaultLanguage", "source", "port", "localeDir", "localeFilePattern"];
       const newErrors: Record<string, boolean> = {};
       let hasError = false;
   
@@ -89,6 +90,12 @@ export default function Configure() {
   
       if (hasError) {
         toast.error("Please fill in all required fields.");
+        return;
+      }
+      if (config.localeFilePattern !== "{locale}.json" &&
+          !/^\{locale\}\/[A-Za-z0-9_-]+\.json$/.test(config.localeFilePattern ?? "")) {
+        setErrors({ ...newErrors, localeFilePattern: true });
+        toast.error("Use {locale}.json or {locale}/<name>.json for the locale file pattern.");
         return;
       }
   
@@ -157,6 +164,14 @@ export default function Configure() {
           <strong>Example:</strong> <code>locales/</code> or <code>cognates/</code> <br />
           <strong>Default Value:</strong> cognates/ <br />
           This is where translations are read from and written to.
+        </>
+      ),
+    },
+    localeFilePattern: {
+      title: "📄 Locale File Pattern",
+      description: (
+        <>
+          Use <code>{'{locale}.json'}</code> for files such as <code>en.json</code>, or <code>{'{locale}/translation.json'}</code> for files such as <code>en/translation.json</code> inside the locale directory.
         </>
       ),
     },
@@ -269,6 +284,17 @@ export default function Configure() {
               className={cn("w-full", errors.localeDir && "border-red-500")}
             />
             {errors.localeDir && <p className="text-red-500 text-sm">Localization directory is required</p>}
+
+            <label className="block mt-4">Locale file pattern</label>
+            <input
+              type="text"
+              name="localeFilePattern"
+              value={config.localeFilePattern ?? "{locale}.json"}
+              onChange={handleChange}
+              onFocus={() => setFocusedField("localeFilePattern")}
+              className={cn("w-full", errors.localeFilePattern && "border-red-500")}
+            />
+            {errors.localeFilePattern && <p className="text-red-500 text-sm">Use {'{locale}.json'} or {'{locale}/translation.json'}</p>}
 
             {/* Exclude Paths */}
             <label className="block mt-4">Exclude paths <span className="text-muted-foreground font-normal">(comma separated)</span></label>

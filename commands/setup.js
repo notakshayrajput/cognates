@@ -3,6 +3,7 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import readline from 'node:readline/promises'
 import { getConfigAsync,getConfigPath,loadConfigAsync,updateConfigAsync } from '../lib/util.js'
+import { localeFilePath } from '../lib/locale-files.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -15,6 +16,7 @@ const defaultConfig = {
   source: 'src/',
   port: 2410,
   localeDir: 'cognates/', // Ensure this is relative
+  localeFilePattern: '{locale}.json',
   excludePaths: ['/assets/*'],
 }
 
@@ -52,7 +54,7 @@ async function continueSetup() {
 async function setupLocaleFolder(config) {
   const appRoot = process.cwd();
   const localeDir = path.join(appRoot, config.localeDir);
-  const jsonFilePath = path.join(localeDir, `${config.defaultLanguage}.json`);
+  const jsonFilePath = localeFilePath(config, config.defaultLanguage, appRoot);
 
   if (!fs.existsSync(localeDir)) {
     fs.mkdirSync(localeDir, { recursive: true });
@@ -60,6 +62,7 @@ async function setupLocaleFolder(config) {
   }
 
   if (!fs.existsSync(jsonFilePath)) {
+    fs.mkdirSync(path.dirname(jsonFilePath), { recursive: true });
     fs.writeFileSync(jsonFilePath, JSON.stringify({}, null, 2));
     console.log(`📄 Created file: ${jsonFilePath}`);
   } else {

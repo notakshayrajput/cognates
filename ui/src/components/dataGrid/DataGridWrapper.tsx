@@ -74,12 +74,13 @@ interface LeafGridProps {
 
 function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeader }: LeafGridProps) {
     const containerRef = useRef<HTMLDivElement>(null)
-    const [availableWidth, setAvailableWidth] = useState(800)
+    const [availableWidth, setAvailableWidth] = useState(0)
 
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
-        const measure = () => setAvailableWidth(container.clientWidth)
+        // Reserve space for the vertical scrollbar so the columns never overflow.
+        const measure = () => setAvailableWidth(Math.max(1, container.clientWidth - 20))
         measure()
         const observer = new ResizeObserver(measure)
         observer.observe(container)
@@ -87,16 +88,16 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeade
     }, [])
 
     const columns = useMemo<ColumnOptions[]>(() => {
-        const keyWidth = Math.max(110, Math.min(360, Math.round(availableWidth * 0.34)))
+        const keyWidth = Math.round(availableWidth * 0.34)
         return [
             { binding: 'key', header: 'Key', width: keyWidth, readOnly: !isDefaultCulture },
-            { binding: 'value', header: 'Value', width: Math.max(140, availableWidth - keyWidth) },
+            { binding: 'value', header: 'Value', width: availableWidth - keyWidth },
         ]
     }, [availableWidth, isDefaultCulture])
 
     return (
         <div ref={containerRef} className="cognates-grid__leaf-table">
-            <RapidGrid
+            {availableWidth > 0 && <RapidGrid
                 aria-label={label}
                 className="cognates-grid__rapid"
                 items={rows}
@@ -104,7 +105,7 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeade
                 rowHeaderWidth={0}
                 rowHeight={38}
                 columnHeaderHeight={showHeader ? 38 : 0}
-                style={{ height: Math.min(800, (showHeader ? 38 : 0) + rows.length * 38 + 8) }}
+                style={{ height: 400 }}
                 onFormatItem={(grid, args) => {
                     if (args.panel !== grid.cells || !args.dataItem) return
                     const row = args.dataItem as LeafRow
@@ -142,7 +143,7 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeade
                         onEdit({ type: 'value', path: row.path, value: String(args.value) })
                     }
                 }}
-            />
+            />}
         </div>
     )
 }
@@ -213,7 +214,7 @@ function LocaleGridLevel({
         if (defaultValue !== null && typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
             flushLeaves()
             const fullPath = itemPath.join('.')
-            const collapsed = collapsedState[fullPath] ?? false
+            const collapsed = collapsedState[fullPath] ?? true
             sections.push(
                 <section className="cognates-grid__group" key={fullPath}>
                     <button
@@ -354,7 +355,7 @@ export default function DataGridWrapper({
                 path={[]}
                 isDefaultCulture={isDefaultCulture}
                 collapsedState={collapsedState}
-                onToggle={(path) => setCollapsedState(previous => ({ ...previous, [path]: !previous[path] }))}
+                onToggle={(path) => setCollapsedState(previous => ({ ...previous, [path]: !(previous[path] ?? true) }))}
                 onEdit={handleEdit}
             />
         </div>

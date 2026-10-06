@@ -4,6 +4,7 @@ export interface CognatesConfig {
   source: string;
   port: number;
   localeDir: string;
+  localeFilePattern: string;
   excludePaths: string[];
 }
 

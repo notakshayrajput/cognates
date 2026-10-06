@@ -51,12 +51,12 @@ export default function Localize() {
             setConfig(config)
             loadDefaultFileContent(config)
             let i = files.findIndex(
-                (x) => x.cultureInfo?.code == config.defaultLanguage,
+                (x) => x.code === config.defaultLanguage,
             )
             let activeTabIndex = i > -1 ? i : 0
             if (!activeTab) {
-                setActiveTab(files[activeTabIndex].filePath) // Set first file as default tab
-                loadFileContent(files[activeTabIndex].filePath)
+                setActiveTab(files[activeTabIndex].code) // Set first file as default tab
+                loadFileContent(files[activeTabIndex].code)
             }
         }
     }
@@ -129,11 +129,11 @@ export default function Localize() {
         setLocaleFiles(response.localeFiles ?? [])
         setNewCultureCode('')
         setOpenAddDialog(false)
-        await changeTab(`${code}.json`)
+        await changeTab(code)
     }
 
     const availableCultures = cultureList.filter(
-        culture => !localeFiles.some(file => file.fileName === `${culture.code}.json`),
+        culture => !localeFiles.some(file => file.code === culture.code),
     )
 
     const onUpdate = (
@@ -224,19 +224,17 @@ export default function Localize() {
                         >
                             <TabsList className="localize-page__tabs-list">
                                 {localeFiles.map(
-                                    ({ fileName, filePath, cultureInfo }) => {
+                                    ({ code, cultureInfo }) => {
                                         const tabLabel =
                                             cultureInfo?.language ||
-                                            fileName
-                                                .replace('.json', '')
-                                                .toUpperCase()
+                                            code.toUpperCase()
                                         return (
                                             <TabsTrigger
-                                                key={fileName}
-                                                value={filePath}
+                                                key={code}
+                                                value={code}
                                             >
                                                 {tabLabel}
-                                                {cultureInfo?.code === config?.defaultLanguage && <span className="localize-page__default-badge">Default</span>}
+                                                {code === config?.defaultLanguage && <span className="localize-page__default-badge">Default</span>}
                                             </TabsTrigger>
                                         )
                                     },
@@ -308,7 +306,7 @@ export default function Localize() {
                                 data={content}
                                 defaultCulture={config.defaultLanguage}
                                 defaultCultureData={defaultContent}
-                                culture={activeTab.replace('.json', '')}
+                                culture={activeTab}
                                 onUpdate={onUpdate}
                             />
                             </>

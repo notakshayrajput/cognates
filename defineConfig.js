@@ -5,6 +5,7 @@ export function defineConfig(userConfig = {}) {
     source: 'src/',
     port: 2410,
     localeDir: 'cognates/',
+    localeFilePattern: '{locale}.json',
     excludePaths: ['/assets/*'],
   };
 

@@ -6,6 +6,7 @@ export default defineConfig({
     source: 'src/',
     port: 2410,
     localeDir: 'cognates/',
+    localeFilePattern: '{locale}.json',
     excludePaths: ['/assets/*'],
 });
 /*
@@ -18,6 +19,7 @@ module.exports = defineConfig({
     source: 'src',
     port: 2410,
     localeDir: 'cognates/',
+    localeFilePattern: '{locale}.json',
     excludePaths: ['/assets/*'],
 });
 */

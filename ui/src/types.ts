@@ -4,6 +4,7 @@ export interface ICognatesConfig {
     source:string,
     port:number
     localeDir:string,
+    localeFilePattern?:string,
     excludePaths:string[]
 }
 export interface IError{
@@ -15,6 +16,7 @@ export interface ICultureInfo {
     code: string;
   }
   export interface ILocaleFileInfo{
+    code:string;
     fileName:string;
     filePath:string;
     cultureInfo?:ICultureInfo
