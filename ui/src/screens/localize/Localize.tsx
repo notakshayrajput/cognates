@@ -7,7 +7,6 @@ import { PlusIcon } from 'lucide-react'
 import './Localize.css'
 import { Button } from '@/components/ui/button'
 import { ConfigService } from '@/services/config.service'
-import { useTheme } from '../../components/theme-provider/theme-provider'
 import DataGridWrapper from '@/components/dataGrid/DataGridWrapper'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
@@ -133,31 +132,6 @@ export default function Localize() {
         await changeTab(`${code}.json`)
     }
 
-    const { theme } = useTheme()
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    const lightTheme = {
-        bgCell: 'oklch(0.98 0.00 106)',
-        bgHeader: 'oklch(0.92 0.00 49)',
-        bgHeaderHasFocus: 'oklch(0.87 0.00 56)',
-        bgHeaderHovered: 'oklch(0.87 0.00 56)',
-        textDark: 'oklch(0.15 0.00 49)',
-        textMedium: 'oklch(0.37 0.01 68)',
-        textHeader: 'oklch(0.15 0.00 49)',
-        textHeaderSelected: 'oklch(0.15 0.00 49)',
-    }
-
-    const darkTheme = {
-        bgCell: 'oklch(0.15 0.00 49)',
-        bgHeader: 'oklch(0.22 0.01 56)',
-        bgHeaderHasFocus: 'oklch(0.27 0.01 34)',
-        bgHeaderHovered: 'oklch(0.27 0.01 34)',
-        textDark: 'oklch(0.98 0.00 106)',
-        textMedium: 'oklch(0.72 0.01 56)',
-        textHeader: 'oklch(0.98 0.00 106)',
-        textHeaderSelected: 'oklch(0.98 0.00 106)',
-        borderColor: 'oklch(0.37 0.01 68)',
-    }
-    const appliedTheme = isDark ? darkTheme : lightTheme
     const availableCultures = cultureList.filter(
         culture => !localeFiles.some(file => file.fileName === `${culture.code}.json`),
     )
@@ -167,7 +141,7 @@ export default function Localize() {
         updatedData: any,
         defaultCulture: string,
         defaultCultureData: any,
-        keyChanges: { oldKey: string; newKey: string }
+        keyChanges: { oldKey: string; newKey: string } | null
     ) => {
         console.log(
             culture,
@@ -329,7 +303,6 @@ export default function Localize() {
                             <>
                             <DataGridWrapper
                                 key={activeTab || config.defaultLanguage}
-                                theme={appliedTheme}
                                 height="100%"
                                 width="100%"
                                 data={content}

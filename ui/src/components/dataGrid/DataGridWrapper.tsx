@@ -1,369 +1,360 @@
-import React, { useState, useEffect } from 'react'
-import '@glideapps/glide-data-grid/dist/index.css'
-import DataEditor, {
-    EditableGridCell,
-    GridCellKind,
-    GridColumn,
-    Item,
-    GridCell,
-} from '@glideapps/glide-data-grid'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent, ReactNode } from 'react'
+import { RapidGrid } from 'rapid-grid-react'
+import type { ColumnOptions } from 'rapid-grid-react'
+import 'rapid-grid-react/style.css'
+import './DataGridWrapper.css'
 
-interface GridRow {
+type LocaleData = Record<string, unknown>
+type KeyChange = { oldKey: string; newKey: string }
+
+interface LeafRow extends Record<string, unknown> {
     key: string
     value: string | null
-    isGroup: boolean
-    collapsed?: boolean
-    depth: number
+    defaultValue: string
+    path: string[]
+    missing: boolean
 }
 
 interface DataGridWrapperProps {
     height?: string | number
     width?: string | number
-    data: Record<string, any>
-    onUpdate?: (culture:string,updatedData: Record<string, any>,defaultCulture:string, updatedDefaultData: Record<string, any>,keyChanges:{ oldKey: string; newKey: string }) => void
+    data: LocaleData
+    defaultCultureData: LocaleData
     culture: string
     defaultCulture: string
-    defaultCultureData: Record<string, any>
-    theme: any
-    
+    onUpdate?: (
+        culture: string,
+        updatedData: LocaleData,
+        defaultCulture: string,
+        updatedDefaultData: LocaleData,
+        keyChanges: KeyChange | null,
+    ) => void
 }
 
-const flattenData = (
-    defaultData: Record<string, any>,
-    actualData: Record<string, any>,
-    parentKey = '',
-    depth = 0,
-    collapsedState: Record<string, boolean> = {},
-): GridRow[] => {
-    let result: GridRow[] = []
+type Edit =
+    | { type: 'key'; path: string[]; value: string }
+    | { type: 'value'; path: string[]; value: string }
+    | { type: 'add'; path: string[]; key: string; value: string | LocaleData }
 
-    Object.keys(defaultData).forEach((key) => {
-        const fullKey = parentKey ? `${parentKey}.${key}` : key
-        const defaultValue = defaultData[key]
-        const actualValue = actualData?.[key] ?? null
-
-        if (typeof defaultValue === 'object' && defaultValue !== null) {
-            result.push({
-                key: fullKey,
-                value: null, // Groups have no values
-                isGroup: true,
-                collapsed: collapsedState[fullKey] ?? false,
-                depth,
-            })
-
-            result = result.concat(
-                flattenData(
-                    defaultValue,
-                    actualValue ?? {},
-                    fullKey,
-                    depth + 1,
-                    collapsedState,
-                ),
-            )
-        } else {
-            result.push({
-                key: fullKey,
-                value: actualValue, // Use actual value if exists, else empty
-                isGroup: false,
-                depth,
-            })
-        }
-    })
-
-    return result
+function asObject(value: unknown): LocaleData {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+        ? value as LocaleData
+        : {}
 }
 
-const DataGridWrapper: React.FC<DataGridWrapperProps> = ({
-    height,
-    width,
-    data,
-    onUpdate,
-    culture,
-    defaultCulture,
-    theme = {},
-    defaultCultureData,
-}) => {
-    const [collapsedState, setCollapsedState] = useState<
-        Record<string, boolean>
-    >({})
-    const [structuredData, setStructuredData] = useState(data)
-    const [defaultData, setDefaultData] = useState(defaultCultureData)
-    const [gridData, setGridData] = useState<GridRow[]>(() =>
-        flattenData(defaultCultureData, data, '', 0, collapsedState)
+function setValueAtPath(data: LocaleData, path: string[], value: unknown): LocaleData {
+    const [key, ...rest] = path
+    return {
+        ...data,
+        [key]: rest.length ? setValueAtPath(asObject(data[key]), rest, value) : value,
+    }
+}
+
+function renameKeyAtPath(data: LocaleData, path: string[], newKey: string): LocaleData {
+    const [key, ...rest] = path
+    if (rest.length) {
+        if (!(key in data)) return data
+        return { ...data, [key]: renameKeyAtPath(asObject(data[key]), rest, newKey) }
+    }
+    if (!(key in data)) return data
+    return Object.fromEntries(
+        Object.entries(data).map(([entryKey, value]) => [entryKey === key ? newKey : entryKey, value]),
     )
-    const [keyChanges, setKeyChanges] = useState<{ oldKey: string; newKey: string }>();
+}
+
+interface LeafGridProps {
+    rows: LeafRow[]
+    parentData: LocaleData
+    isDefaultCulture: boolean
+    onEdit: (edit: Edit) => void
+    label: string
+}
+
+function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label }: LeafGridProps) {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [availableWidth, setAvailableWidth] = useState(800)
 
     useEffect(() => {
-        setGridData(flattenData(defaultData, structuredData, '', 0, collapsedState))
-    }, [structuredData, defaultData, collapsedState])
+        const container = containerRef.current
+        if (!container) return
+        const measure = () => setAvailableWidth(container.clientWidth)
+        measure()
+        const observer = new ResizeObserver(measure)
+        observer.observe(container)
+        return () => observer.disconnect()
+    }, [])
 
-    const toggleGroup = (groupKey: string) => {
-        setCollapsedState((prev) => ({
-            ...prev,
-            [groupKey]: !prev[groupKey],
-        }))
+    const columns = useMemo<ColumnOptions[]>(() => {
+        const keyWidth = Math.max(180, Math.min(360, Math.round(availableWidth * 0.34)))
+        return [
+            { binding: 'key', header: 'Key', width: keyWidth, readOnly: !isDefaultCulture },
+            { binding: 'value', header: 'Value', width: Math.max(260, availableWidth - keyWidth) },
+        ]
+    }, [availableWidth, isDefaultCulture])
+
+    return (
+        <div ref={containerRef} className="cognates-grid__leaf-table">
+            <RapidGrid
+                aria-label={label}
+                className="cognates-grid__rapid"
+                items={rows}
+                columns={columns}
+                rowHeaderWidth={0}
+                rowHeight={34}
+                columnHeaderHeight={36}
+                style={{ height: Math.min(480, 36 + rows.length * 34 + 2) }}
+                onFormatItem={(grid, args) => {
+                    if (args.panel !== grid.cells || !args.dataItem) return
+                    const row = args.dataItem as LeafRow
+                    if (args.col === 0) {
+                        args.cellElement.title = row.path.join('.')
+                    } else {
+                        args.cellElement.classList.toggle('cognates-grid__fallback', row.missing)
+                        if (row.missing) args.cellElement.textContent = row.defaultValue
+                        args.cellElement.title = row.missing
+                            ? 'Using the default locale value'
+                            : String(row.value ?? '')
+                    }
+                }}
+                onCellEditEnding={(_, args) => {
+                    if (args.col !== 0) return
+                    const nextKey = String(args.value).trim()
+                    const currentKey = String(args.oldValue)
+                    if (!nextKey || nextKey.includes('.') ||
+                        (nextKey !== currentKey && Object.prototype.hasOwnProperty.call(parentData, nextKey))) {
+                        args.cellElement.title = 'Enter a unique key without dots.'
+                        args.cellElement.querySelector('input')?.setAttribute('aria-invalid', 'true')
+                        return false
+                    }
+                    args.value = nextKey
+                }}
+                onCellEditEnded={(_, args) => {
+                    const row = args.dataItem as LeafRow
+                    if (args.col === 0) {
+                        if (args.value !== args.oldValue) {
+                            const oldPath = row.path
+                            onEdit({ type: 'key', path: oldPath, value: String(args.value) })
+                            row.path = [...oldPath.slice(0, -1), String(args.value)]
+                        }
+                    } else if (args.value !== args.oldValue) {
+                        onEdit({ type: 'value', path: row.path, value: String(args.value) })
+                    }
+                }}
+            />
+        </div>
+    )
+}
+
+interface LevelProps {
+    defaultData: LocaleData
+    actualData: LocaleData
+    path: string[]
+    isDefaultCulture: boolean
+    collapsedState: Record<string, boolean>
+    onToggle: (path: string) => void
+    onEdit: (edit: Edit) => void
+}
+
+function LocaleGridLevel({
+    defaultData, actualData, path, isDefaultCulture, collapsedState, onToggle, onEdit,
+}: LevelProps) {
+    const [adding, setAdding] = useState<'key' | 'group' | null>(null)
+    const [newName, setNewName] = useState('')
+    const [newValue, setNewValue] = useState('')
+    const [addError, setAddError] = useState('')
+    const sections: ReactNode[] = []
+    let leaves: LeafRow[] = []
+
+    const closeAddForm = () => {
+        setAdding(null)
+        setNewName('')
+        setNewValue('')
+        setAddError('')
     }
 
-    const getVisibleRows = (): GridRow[] => {
-        const visible: GridRow[] = []
-        const collapsedGroups = new Set<string>()
-
-        gridData.forEach((row) => {
-            for (let key of collapsedGroups) {
-                if (row.key.startsWith(key + '.')) return
-            }
-            if (row.isGroup && row.collapsed) {
-                collapsedGroups.add(row.key)
-            }
-            visible.push(row)
-        })
-
-        return visible
+    const addEntry = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!adding) return
+        const key = newName.trim()
+        if (!key || key.includes('.')) {
+            setAddError('Enter a key name without dots.')
+            return
+        }
+        if (Object.prototype.hasOwnProperty.call(defaultData, key)) {
+            setAddError('A key or group with this name already exists here.')
+            return
+        }
+        onEdit({ type: 'add', path, key, value: adding === 'group' ? {} : newValue })
+        closeAddForm()
     }
 
-    const updateNestedKey = (
-        obj: Record<string, any>,
-        oldKeyPath: string,
-        newKeyPath: string,
-    ) => {
-        const keys = oldKeyPath.split('.')
-        const parentKeys = keys.slice(0, -1)
-        const newKey = newKeyPath.split('.').pop()!
-        if (parentKeys.length === 0) {
-            // Handle top-level keys
-            const newObj: Record<string, any> = {}
-            Object.keys(obj).forEach((key) => {
-                if (key === keys[0]) {
-                    newObj[newKey] = obj[key] // Move the renamed key in place
-                } else {
-                    newObj[key] = obj[key] // Keep everything else in order
-                }
+    const flushLeaves = () => {
+        if (!leaves.length) return
+        const rows = leaves
+        sections.push(
+            <LeafGrid
+                key={rows[0].path.join('.')}
+                rows={rows}
+                parentData={defaultData}
+                isDefaultCulture={isDefaultCulture}
+                onEdit={onEdit}
+                label={`${path.join('.') || 'Locale'} keys and values`}
+            />,
+        )
+        leaves = []
+    }
+
+    for (const [key, defaultValue] of Object.entries(defaultData)) {
+        const itemPath = [...path, key]
+        const actualValue = actualData[key]
+        if (defaultValue !== null && typeof defaultValue === 'object' && !Array.isArray(defaultValue)) {
+            flushLeaves()
+            const fullPath = itemPath.join('.')
+            const collapsed = collapsedState[fullPath] ?? false
+            sections.push(
+                <section className="cognates-grid__group" key={fullPath}>
+                    <button
+                        className="cognates-grid__group-toggle"
+                        type="button"
+                        aria-expanded={!collapsed}
+                        onClick={() => onToggle(fullPath)}
+                    >
+                        <span className="cognates-grid__chevron" aria-hidden="true">{collapsed ? '▸' : '▾'}</span>
+                        <span>{key}</span>
+                    </button>
+                    {!collapsed && (
+                        <div className="cognates-grid__nested">
+                            <LocaleGridLevel
+                                defaultData={asObject(defaultValue)}
+                                actualData={asObject(actualValue)}
+                                path={itemPath}
+                                isDefaultCulture={isDefaultCulture}
+                                collapsedState={collapsedState}
+                                onToggle={onToggle}
+                                onEdit={onEdit}
+                            />
+                        </div>
+                    )}
+                </section>,
+            )
+        } else {
+            leaves.push({
+                key,
+                value: actualValue == null ? null : String(actualValue),
+                defaultValue: defaultValue == null ? '' : String(defaultValue),
+                path: itemPath,
+                missing: !isDefaultCulture && (actualValue == null ||
+                    (typeof actualValue === 'string' && !actualValue.trim())),
             })
-            return newObj // Return a new object for reactivity
         }
-
-        let current = obj
-        for (let i = 0; i < parentKeys.length; i++) {
-            if (!current[parentKeys[i]]) return obj
-            current = current[parentKeys[i]]
-        }
-
-        // Create a new ordered object
-        const newObj: Record<string, any> = {}
-        Object.keys(current).forEach((key) => {
-            if (key === keys[keys.length - 1]) {
-                newObj[newKey] = current[key] // Move the renamed key in place
-            } else {
-                newObj[key] = current[key] // Keep everything else in order
-            }
-        })
-
-        // Apply the updated object
-        parentKeys.reduce((acc, key, index) => {
-            if (index === parentKeys.length - 1) {
-                acc[key] = newObj
-            }
-            return acc[key]
-        }, obj)
-
-        return { ...obj } // Return a new object for reactivity
     }
+    flushLeaves()
 
-    const updateNestedValue = (
-        obj: Record<string, any>,
-        keyPath: string,
-        newValue: string | null
-    ) => {
-        const keys = keyPath.split('.')
-        const newObj = { ...obj } // Ensure immutability
-        let current = newObj
+    return (
+        <div className="cognates-grid__level">
+            {sections.length ? sections : <p className="cognates-grid__empty">No keys in this section.</p>}
+            {isDefaultCulture && (
+                <div className="cognates-grid__add">
+                    {adding ? (
+                        <form onSubmit={addEntry} aria-label={`Add ${adding} in ${path.join('.') || 'root'}`}>
+                            <label>
+                                {adding === 'group' ? 'Group name' : 'Key name'}
+                                <input
+                                    autoFocus
+                                    value={newName}
+                                    onChange={event => { setNewName(event.target.value); setAddError('') }}
+                                />
+                            </label>
+                            {adding === 'key' && (
+                                <label>
+                                    Value
+                                    <input value={newValue} onChange={event => setNewValue(event.target.value)} />
+                                </label>
+                            )}
+                            {addError && <p role="alert" className="cognates-grid__add-error">{addError}</p>}
+                            <div className="cognates-grid__add-actions">
+                                <button type="submit">Add {adding}</button>
+                                <button type="button" onClick={closeAddForm}>Cancel</button>
+                            </div>
+                        </form>
+                    ) : (
+                        <div className="cognates-grid__add-actions">
+                            <button type="button" onClick={() => setAdding('key')}>+ Add key</button>
+                            <button type="button" onClick={() => setAdding('group')}>+ Add group</button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
 
-        for (let i = 0; i < keys.length - 1; i++) {
-            if (!current[keys[i]]) current[keys[i]] = {} // Ensure path exists
-            current = current[keys[i]]
-        }
+export default function DataGridWrapper({
+    height = '100%', width = '100%', data, defaultCultureData,
+    culture, defaultCulture, onUpdate,
+}: DataGridWrapperProps) {
+    const [currentData, setCurrentData] = useState<LocaleData>(data)
+    const [defaultData, setDefaultData] = useState<LocaleData>(defaultCultureData)
+    const currentDataRef = useRef<LocaleData>(data)
+    const defaultDataRef = useRef<LocaleData>(defaultCultureData)
+    const [collapsedState, setCollapsedState] = useState<Record<string, boolean>>({})
+    const isDefaultCulture = culture === defaultCulture
 
-        current[keys[keys.length - 1]] = newValue
-        return newObj // Return new reference
-    }
+    useEffect(() => {
+        currentDataRef.current = data
+        setCurrentData(data)
+    }, [data])
 
-    const columns: GridColumn[] = [
-        { title: 'Key', id: 'key', grow: 1, width: 100 },
-        { title: 'Value', id: 'value', grow: 3, width: 150 },
-    ]
+    useEffect(() => {
+        defaultDataRef.current = defaultCultureData
+        setDefaultData(defaultCultureData)
+    }, [defaultCultureData])
 
-    const getNestedValue = (obj: Record<string, any>, path: string): any => {
-        return path.split('.').reduce((acc, key) => acc && acc[key] !== undefined ? acc[key] : undefined, obj)
-    }
+    const handleEdit = (edit: Edit) => {
+        let nextData: LocaleData
+        let nextDefaultData: LocaleData = defaultDataRef.current
+        let keyChange: KeyChange | null = null
 
-    const addMissingNestedKey = (obj: any, keyPath: string) => {
-        const keys = keyPath.split('.')
-        let current = obj
-
-        for (let i = 0; i < keys.length; i++) {
-            const key = keys[i]
-
-            if (!current[key]) {
-                current[key] = i === keys.length - 1 ? "" : {} // Create an empty object or string
+        if (edit.type === 'key') {
+            if (!isDefaultCulture) return
+            nextData = renameKeyAtPath(currentDataRef.current, edit.path, edit.value)
+            nextDefaultData = renameKeyAtPath(defaultDataRef.current, edit.path, edit.value)
+            keyChange = {
+                oldKey: edit.path.join('.'),
+                newKey: [...edit.path.slice(0, -1), edit.value].join('.'),
             }
-
-            current = current[key]
+        } else if (edit.type === 'add') {
+            if (!isDefaultCulture) return
+            const newPath = [...edit.path, edit.key]
+            nextData = setValueAtPath(currentDataRef.current, newPath, edit.value)
+            nextDefaultData = setValueAtPath(defaultDataRef.current, newPath, edit.value)
+        } else {
+            nextData = setValueAtPath(currentDataRef.current, edit.path, edit.value)
+            if (isDefaultCulture) nextDefaultData = setValueAtPath(defaultDataRef.current, edit.path, edit.value)
         }
 
-        return obj
+        currentDataRef.current = nextData
+        defaultDataRef.current = nextDefaultData
+        setCurrentData(nextData)
+        setDefaultData(nextDefaultData)
+        onUpdate?.(culture, nextData, defaultCulture, nextDefaultData, keyChange)
     }
 
     return (
-        <DataEditor
-            height={height}
-            width={width}
-            columns={columns}
-            getCellContent={(cell: Item): GridCell => {
-                const [col, row] = cell
-                const rowData = getVisibleRows()[row]
-
-                if (!rowData) {
-                    return {
-                        kind: GridCellKind.Text,
-                        data: '',
-                        displayData: '',
-                        allowOverlay: false,
-                    }
-                }
-
-                if (col === 0) {
-                    // Display key name without full path
-                    const displayKey =
-                        rowData.key.split('.').pop() || rowData.key
-                    const prefix = rowData.isGroup
-                        ? rowData.collapsed
-                            ? '▶ '
-                            : '▼ '
-                        : '   '
-
-                    return {
-                        kind: GridCellKind.Text,
-                        data: `${prefix}${displayKey}`,
-                        displayData: `${prefix}${displayKey}`,
-                        allowOverlay:
-                            !rowData.isGroup &&
-                            culture === defaultCulture, // Editable only in default culture
-                        copyData: displayKey,
-                        themeOverride: {
-                            cellHorizontalPadding: 10 + rowData.depth * 15, // Add padding based on depth
-                        }
-                    }
-                }
-
-                if (col === 1) {
-                    if (rowData.isGroup) {
-                        return {
-                            kind: GridCellKind.Text,
-                            data: '',
-                            displayData: '', // Empty value for groups
-                            allowOverlay: false,
-                            copyData: '',
-                        }
-                    }
-                    const defaultValue = getNestedValue(defaultCultureData, rowData.key) ?? '' // Get default value if missing
-                    const displayValue = rowData.value ?? defaultValue
-                    const isUsingDefault = rowData.value === null
-
-                    return {
-                        kind: GridCellKind.Text,
-                        data: rowData.value ?? "", // Don't set value just display default value
-                        style: isUsingDefault ? "faded" : "normal",
-                        displayData: isUsingDefault ? `${defaultValue}` : displayValue, // Italicize using Markdown-style `*`
-                        allowOverlay: !rowData.isGroup, // Prevent editing in groups
-                        copyData: displayValue,
-                        allowWrapping: true
-                    }
-                }
-
-                return {
-                    kind: GridCellKind.Text,
-                    data: '',
-                    displayData: '',
-                    allowOverlay: false,
-                }
-            }}
-            theme={theme}
-            rowMarkers="none"
-            headerHeight={32}
-            rowHeight={28}
-            onCellEdited={(cell: Item, newValue: EditableGridCell) => {
-                const [col, row] = cell
-                const rowData = getVisibleRows()[row]
-                let _keyChanges:any=null;//:Array<{oldKey:string,newKey:string}> = [...keyChanges];
-                if (!rowData) return
-
-                setGridData((prev) => {
-                    const updatedData = [...prev]
-
-                    let newStructuredData = { ...structuredData } // Ensure we're working with a fresh copy
-                    let newDefaultData = { ...defaultData }
-
-                    if (col === 0 && culture === defaultCulture && !rowData.isGroup) {
-                        // Editing the Key
-                        const newKeySegment = (newValue as { data: string }).data.trim()
-                        const keyParts = rowData.key.split('.')
-                        keyParts[keyParts.length - 1] = newKeySegment
-                        const newKey = keyParts.join('.')
-                        newStructuredData = updateNestedKey(
-                            structuredData,
-                            rowData.key,
-                            newKey,
-                        )
-
-                        if (culture === defaultCulture) {
-                            newDefaultData = updateNestedKey(
-                                defaultData,
-                                rowData.key,
-                                newKey
-                            )                            
-                        }
-                        updatedData[row] = { ...rowData, key: newKey }
-                        _keyChanges ={ oldKey: rowData.key, newKey }
-                        setKeyChanges(_keyChanges);
-                    }
-
-                    if (col === 1 && !rowData.isGroup) {
-                        // Editing the Value
-                        const newValueText = (newValue as { data: string }).data
-
-                        newStructuredData = addMissingNestedKey(newStructuredData, rowData.key)
-                        newStructuredData = updateNestedValue(newStructuredData, rowData.key, newValueText)
-
-                        if (culture === defaultCulture) {
-                            newDefaultData = updateNestedValue(newDefaultData, rowData.key, newValueText)
-                        }
-
-                        updatedData[row] = {
-                            ...rowData,
-                            value: newValueText,
-                        }
-                    }
-
-                    setStructuredData(newStructuredData)
-                    setDefaultData(newDefaultData)
-                    setGridData(flattenData(defaultData, newStructuredData, '', 0, collapsedState)) // Ensure gridData is updated
-
-                    if(onUpdate)
-                        onUpdate(culture,newStructuredData,defaultCulture, newDefaultData,_keyChanges)
-
-                    return updatedData
-                })
-            }}
-            rows={getVisibleRows().length}
-            onCellClicked={(item) => {
-                const [, row] = item
-                const rowData = getVisibleRows()[row]
-                if (rowData?.isGroup) {
-                    toggleGroup(rowData.key)
-                }
-            }}
-        />
+        <div className="cognates-grid" style={{ height, width }}>
+            {!isDefaultCulture && (
+                <p className="cognates-grid__hint">Add keys and groups in the default locale.</p>
+            )}
+            <LocaleGridLevel
+                defaultData={defaultData}
+                actualData={currentData}
+                path={[]}
+                isDefaultCulture={isDefaultCulture}
+                collapsedState={collapsedState}
+                onToggle={(path) => setCollapsedState(previous => ({ ...previous, [path]: !previous[path] }))}
+                onEdit={handleEdit}
+            />
+        </div>
     )
 }
-
-export default DataGridWrapper
