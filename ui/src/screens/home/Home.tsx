@@ -1,52 +1,45 @@
 import MainLayout from "../../layout/main-layout/MainLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Settings, Globe } from "lucide-react";
+import { ArrowUpRight, Globe2, Settings2 } from "lucide-react";
+import "./Home.css";
 
 export default function Home() {
   return (
     <MainLayout>
-      <div className="flex flex-col items-center  justify-center">
-      <div className="flex flex-col items-center justify-center">
-      <div className="text-center mb-6 pb-10">
-          <h1 className="text-2xl font-bold">Welcome to Cognates</h1>
-          <p className="text-sm text-gray-600">Manage configurations and localizations easily with a simple and intuitive interface.</p>
+      <div className="home">
+        <div className="home__intro">
+          <span className="home__eyebrow">YOUR LOCALIZATION WORKSPACE</span>
+          <h1>Words that work<br /><span>everywhere.</span></h1>
+          <p>Keep your language files organized, edit translations in context, and make every experience feel local.</p>
+          <Link className="home__primary-link" to="/localize">
+            Open localization <ArrowUpRight size={17} />
+          </Link>
         </div>
-        <div className="flex space-x-4">
-          {/* Configuration Card */}
-          <Card className="w-64 flex flex-col items-center text-center">
-            <CardHeader className="flex flex-col items-center">
-              <Settings className="w-12 h-12" />
-              <CardTitle>Configuration</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>Manage Cognates configuration file.</CardDescription>
-            </CardContent>
-            <CardFooter>
-              <Button asChild>
-                <Link to="/configure">Configure</Link>
-              </Button>
-            </CardFooter>
-          </Card>
 
-          {/* Localization Card */}
-          <Card className="w-64 flex flex-col items-center text-center">
-            <CardHeader className="flex flex-col items-center">
-              <Globe className="w-12 h-12" />
-              <CardTitle>Localization</CardTitle>
-            </CardHeader>
-            <CardContent>
-            <CardDescription>Edit localization strings or add new keys.</CardDescription>
-            </CardContent>
-            <CardFooter>
-              <Button asChild>
-                <Link to="/localize">Edit</Link>
-              </Button>
-            </CardFooter>
-          </Card>
+        <div className="home__workspace">
+          <div className="home__section-heading">
+            <span className="home__eyebrow">WORKSPACE</span>
+            <h2>Where would you like to start?</h2>
+          </div>
+          <div className="home__cards">
+            <Link to="/localize" className="home__card">
+              <span className="home__card-icon"><Globe2 size={21} strokeWidth={1.8} /></span>
+              <span className="home__card-copy">
+                <strong>Localization</strong>
+                <span>Edit strings, manage locales, and keep keys in sync.</span>
+              </span>
+              <ArrowUpRight className="home__card-arrow" size={20} />
+            </Link>
+            <Link to="/configure" className="home__card">
+              <span className="home__card-icon"><Settings2 size={21} strokeWidth={1.8} /></span>
+              <span className="home__card-copy">
+                <strong>Configuration</strong>
+                <span>Set source paths and language preferences.</span>
+              </span>
+              <ArrowUpRight className="home__card-arrow" size={20} />
+            </Link>
+          </div>
         </div>
-      </div>
       </div>
     </MainLayout>
   );
