@@ -207,22 +207,22 @@ export default function Localize() {
 
     return (
         <LocalizeLayout>
-            <div className="flex h-full items-start">
-                {/* Sidebar
-                <aside className="w-64 sidebar scroll  overflow-x-auto overflow-y-auto drop-shadow-lg p-2 h-[calc(100vh-145px)]">
-                    Sidebar Content (Empty for now)
-                </aside> */}
-
-                {/* Main Content */}
-                <div className="flex flex-col flex-1table-parent h-[calc(100vh-145px)] w-[calc(100vw-4rem)] ">
-                    {/* Tabs */}
-                    <div className="flex justify-between">
+            <div className="localize-page">
+                <div className="localize-page__heading">
+                    <div>
+                        <span className="localize-page__eyebrow">TRANSLATIONS</span>
+                        <h1>Localization</h1>
+                        <p>Manage language files and edit strings in place.</p>
+                    </div>
+                </div>
+                <div className="localize-page__workspace">
+                    <div className="localize-page__toolbar">
                         <Tabs
                             value={activeTab}
                             onValueChange={handleTabChange}
-                            className="tabs scroll pb-2 overflow-x-auto overflow-y-hidden max-w-[calc(100vw-4rem)]"
+                            className="localize-page__tabs scroll"
                         >
-                            <TabsList className="tabs-list gap-2 max-w-[calc(100vw-10rem)]">
+                            <TabsList className="localize-page__tabs-list">
                                 {localeFiles.map(
                                     ({ fileName, filePath, cultureInfo }) => {
                                         const tabLabel =
@@ -235,14 +235,15 @@ export default function Localize() {
                                                 key={fileName}
                                                 value={filePath}
                                             >
-                                                {`${tabLabel}${cultureInfo?.code === config?.defaultLanguage ? '⭐' : ''}`}
+                                                {tabLabel}
+                                                {cultureInfo?.code === config?.defaultLanguage && <span className="localize-page__default-badge">Default</span>}
                                             </TabsTrigger>
                                         )
                                     },
                                 )}
                             </TabsList>
                         </Tabs>
-                        <div className="flex w-fit justify-end drop-shadow-lg max-h-30 gap-2">
+                        <div className="localize-page__actions">
                         <Dialog open={openAddDialog} onOpenChange={(open) => {
                             setOpenAddDialog(open)
                             if (!open) {
@@ -251,7 +252,7 @@ export default function Localize() {
                             }
                         }}>
                             <DialogTrigger asChild>
-                                <Button variant="outline" className="ml-2 shrink-0">
+                                <Button variant="outline" className="shrink-0">
                                     <PlusIcon /> Add locale
                                 </Button>
                             </DialogTrigger>
@@ -294,8 +295,7 @@ export default function Localize() {
                     </div>
                     </div>
                     
-                    {/* Content Panel (Placeholder for Table) */}
-                    <div className="table scroll mt-2 drop-shadow-lg h-[calc(100vh-150px)] overflow-auto">
+                    <div className="localize-page__table scroll">
                         {content &&
                         config?.defaultLanguage &&
                         defaultContent &&
@@ -313,7 +313,7 @@ export default function Localize() {
                             />
                             </>
                         ) : (
-                            <p>Loading data...</p>
+                            <p className="localize-page__loading">Loading language data…</p>
                         )}
                     </div>
                 </div>

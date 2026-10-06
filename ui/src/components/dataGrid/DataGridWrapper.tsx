@@ -69,9 +69,10 @@ interface LeafGridProps {
     isDefaultCulture: boolean
     onEdit: (edit: Edit) => void
     label: string
+    showHeader: boolean
 }
 
-function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label }: LeafGridProps) {
+function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeader }: LeafGridProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [availableWidth, setAvailableWidth] = useState(800)
 
@@ -86,10 +87,10 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label }: LeafGri
     }, [])
 
     const columns = useMemo<ColumnOptions[]>(() => {
-        const keyWidth = Math.max(180, Math.min(360, Math.round(availableWidth * 0.34)))
+        const keyWidth = Math.max(110, Math.min(360, Math.round(availableWidth * 0.34)))
         return [
             { binding: 'key', header: 'Key', width: keyWidth, readOnly: !isDefaultCulture },
-            { binding: 'value', header: 'Value', width: Math.max(260, availableWidth - keyWidth) },
+            { binding: 'value', header: 'Value', width: Math.max(140, availableWidth - keyWidth) },
         ]
     }, [availableWidth, isDefaultCulture])
 
@@ -101,9 +102,9 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label }: LeafGri
                 items={rows}
                 columns={columns}
                 rowHeaderWidth={0}
-                rowHeight={34}
-                columnHeaderHeight={36}
-                style={{ height: Math.min(480, 36 + rows.length * 34 + 2) }}
+                rowHeight={38}
+                columnHeaderHeight={showHeader ? 38 : 0}
+                style={{ height: Math.min(800, (showHeader ? 38 : 0) + rows.length * 38 + 8) }}
                 onFormatItem={(grid, args) => {
                     if (args.panel !== grid.cells || !args.dataItem) return
                     const row = args.dataItem as LeafRow
@@ -200,6 +201,7 @@ function LocaleGridLevel({
                 isDefaultCulture={isDefaultCulture}
                 onEdit={onEdit}
                 label={`${path.join('.') || 'Locale'} keys and values`}
+                showHeader={path.length === 0}
             />,
         )
         leaves = []
