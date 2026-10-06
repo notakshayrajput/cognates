@@ -75,17 +75,20 @@ interface LeafGridProps {
 function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeader }: LeafGridProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [availableWidth, setAvailableWidth] = useState(0)
+    const contentHeight = (showHeader ? 38 : 0) + rows.length * 38 + 2
+    const tableHeight = Math.min(400, contentHeight)
+    const needsVerticalScroll = contentHeight > 400
 
     useEffect(() => {
         const container = containerRef.current
         if (!container) return
-        // Reserve space for the vertical scrollbar so the columns never overflow.
-        const measure = () => setAvailableWidth(Math.max(1, container.clientWidth - 20))
+        // Reserve scrollbar space only when the table needs vertical scrolling.
+        const measure = () => setAvailableWidth(Math.max(1, container.clientWidth - (needsVerticalScroll ? 20 : 2)))
         measure()
         const observer = new ResizeObserver(measure)
         observer.observe(container)
         return () => observer.disconnect()
-    }, [])
+    }, [needsVerticalScroll])
 
     const columns = useMemo<ColumnOptions[]>(() => {
         const keyWidth = Math.round(availableWidth * 0.34)
@@ -105,7 +108,7 @@ function LeafGrid({ rows, parentData, isDefaultCulture, onEdit, label, showHeade
                 rowHeaderWidth={0}
                 rowHeight={38}
                 columnHeaderHeight={showHeader ? 38 : 0}
-                style={{ height: 400 }}
+                style={{ height: tableHeight }}
                 onFormatItem={(grid, args) => {
                     if (args.panel !== grid.cells || !args.dataItem) return
                     const row = args.dataItem as LeafRow
