@@ -1,15 +1,23 @@
-.layout{
-    background-color: var(--light1);
-    color: var(--dark4);
-    min-height:100vh;
+.layout {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
 }
-.main-container{
-    color: var(--dark2);
-    background-color: var(--light3);
-    padding:calc(var(--spacing) * 4);
+
+.main-container {
+  width: 100%;
 }
-.main{
-    background-color: var(--light1);
-    color: var(--dark4);
-    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+
+.main {
+  margin-inline: auto;
+  padding: clamp(18px, 3vw, 44px);
+}
+
+.main--standard {
+  width: min(100%, 1220px);
+}
+
+.main--localize {
+  width: min(100%, 1600px);
+  padding: clamp(16px, 2.5vw, 32px);
 }

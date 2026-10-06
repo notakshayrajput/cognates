@@ -8,7 +8,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
-    <div className="layout dark:bg-background-dark dark:text-foreground-dark transition-colors duration-300">
+    <div className="layout transition-colors duration-300">
       {children}
       <Toaster/>
     </div>

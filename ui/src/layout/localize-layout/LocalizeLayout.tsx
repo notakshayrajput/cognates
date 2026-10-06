@@ -12,8 +12,8 @@ const LocalizeLayout: React.FC<LocalizeLayoutProps> = ({ children }) => {
     <Layout>
       <Navbar>
         </Navbar>
-      <div className="flex-grow flex flex-col main-container min-h-[calc(100vh-65px)] ">
-      <div className="flex-grow flex flex-start main-container min-h-[calc(100vh-105px)] main">{children}</div>
+      <div className="flex-grow flex flex-col main-container">
+      <main className="flex-grow main main--localize">{children}</main>
       </div>
     </Layout>
   );

@@ -1,4 +1,4 @@
 .dropdown-menu {
-    background-color: var(--light2);
-    color: var(--dark3);
+    background-color: var(--popover);
+    color: var(--popover-foreground);
 }

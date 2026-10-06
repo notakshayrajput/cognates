@@ -1,4 +1,3 @@
-import './App.css'
 // import { ICognatesConfig } from './types'
 import { Route, Routes } from 'react-router-dom'
 import Home from './screens/home/Home'
