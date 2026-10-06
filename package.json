@@ -1,6 +1,6 @@
 {
   "name": "cognates",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI and local browser editor for managing JSON translations and checking locale files.",
   "main": "index.js",
   "types": "index.d.ts",
