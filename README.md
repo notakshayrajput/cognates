@@ -9,10 +9,11 @@ Cognates is a command line tool and local browser editor for JSON translation fi
 
 ## Quick start
 
-Run these commands from your application's root directory:
+Choose one package name, then run the CLI from your application's root directory. Both packages install the `cognates` command:
 
 ```sh
-npm install --save-dev cognates
+npm install --save-dev @akshay-rajput/cognates
+# Or: npm install --save-dev cognates
 npx cognates setup
 npx cognates start
 ```
@@ -48,7 +49,7 @@ Add your source strings to `cognates/en.json` as JSON. The editor can create ano
 The CLI reads `cognates.config.js` from the current directory. `setup` writes a config appropriate for your project's `package.json`: ESM when `"type": "module"`, otherwise CommonJS. You can edit it later in the browser editor or by hand.
 
 ```js
-import { defineConfig } from 'cognates';
+import { defineConfig } from '@akshay-rajput/cognates';
 
 export default defineConfig({
   defaultLanguage: 'en',
@@ -60,26 +61,31 @@ export default defineConfig({
 });
 ```
 
-For a CommonJS project, use `const { defineConfig } = require('cognates')` and `module.exports = defineConfig({ ... })` instead. Use a project relative `localeDir`, such as `cognates/`; the CLI resolves it from the directory where you run it. `defaultLanguage` names the source JSON file, such as `en.json`. `port` controls the local editor port. `source`, `excludePaths`, and `autoDetectLanguage` are stored as configuration settings; the current CLI does not scan source code or select a language in your application at runtime.
+If you installed the unscoped package, import from `cognates` instead. `setup` writes the correct import automatically. For a CommonJS project, use `const { defineConfig } = require('@akshay-rajput/cognates')` and `module.exports = defineConfig({ ... })` instead. Use a project relative `localeDir`, such as `cognates/`; the CLI resolves it from the directory where you run it. `defaultLanguage` names the source JSON file, such as `en.json`. `port` controls the local editor port. `source`, `excludePaths`, and `autoDetectLanguage` are stored as configuration settings; the current CLI does not scan source code or select a language in your application at runtime.
 
 ## Development and release
 
-From this repository:
+From this repository, after installing development dependencies on a clean checkout:
 
 ```sh
-npm ci
-npm ci --prefix ui
 npm test
 npm run lint
 npm run typecheck
 npm pack --dry-run
+npm run prepare:scoped
+npm pack .release/scoped --dry-run
 ```
 
-`npm pack` and `npm publish` build the browser UI before creating the package. Review the tarball file list before publishing. The npm package version is `1.0.0`, corresponding to the `v1.0.0` release tag. Publishing requires access to the chosen package name on npm:
+`npm pack` builds the browser UI for the unscoped package. `prepare:scoped` runs the release checks and build, then copies the same runtime files into `.release/scoped` with the package name `@akshay-rajput/cognates`. Review both file lists before publishing. The `cognates` command remains the same in both packages.
+
+For this release, `cognates@1.0.0` is already published. Publish only the new scoped package after signing in to the official npm registry:
 
 ```sh
-npm publish --access public
+npm login --registry=https://registry.npmjs.org/ --offline=false
+npm publish .release/scoped --access public --registry=https://registry.npmjs.org/ --offline=false
 ```
+
+For later releases, update the root version, rebuild `.release/scoped`, and publish both package names at the same version. Run `npm publish --access public` from the repository root for `cognates`, then publish `.release/scoped` for `@akshay-rajput/cognates`.
 
 ## License
 

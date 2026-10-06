@@ -1,6 +1,6 @@
 export default [
   {
-    ignores: ['node_modules/**', 'ui/**', 'Test Environment/**', '.npm-cache/**', '.local-package/**'],
+    ignores: ['node_modules/**', 'ui/**', 'Test Environment/**', '.npm-cache/**', '.local-package/**', '.release/**'],
   },
   {
     files: ['**/*.{js,cjs,mjs}'],

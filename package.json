@@ -38,6 +38,7 @@
     "typecheck": "tsc --noEmit --module nodenext --moduleResolution nodenext --target es2022 type-tests/esm.mts type-tests/commonjs.cts",
     "prepack": "node scripts/prepare-package.mjs",
     "prepublishOnly": "npm test && npm run lint && npm run typecheck",
+    "prepare:scoped": "node scripts/prepare-scoped-package.mjs",
     "install:local": "node scripts/install-local.mjs",
     "start": "cd \"Test Environment\" && npx cognates start",
     "lint": "eslint . --ext .js,.cjs,.mjs",

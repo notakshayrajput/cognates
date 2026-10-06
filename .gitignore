@@ -1,5 +1,6 @@
 node_modules/*
 .npm-cache/
+.release/
 dist/
 Test Environment/*
 .DS_Store
