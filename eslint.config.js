@@ -1,30 +1,23 @@
-import tsParser from "@typescript-eslint/parser";
-import tsPlugin from "@typescript-eslint/eslint-plugin";
-import reactPlugin from "eslint-plugin-react";
-import prettierPlugin from "eslint-plugin-prettier";
-
 export default [
   {
-    ignores: ["node_modules/", "dist/", "Test Environment/"],
+    ignores: ['node_modules/**', 'ui/**', 'Test Environment/**', '.npm-cache/**', '.local-package/**'],
   },
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ['**/*.{js,cjs,mjs}'],
     languageOptions: {
-      parser: tsParser,
-      ecmaVersion: "latest",
-      sourceType: "module",
-    },
-    plugins: {
-      "@typescript-eslint": tsPlugin,
-      react: reactPlugin,
-      prettier: prettierPlugin,
+      ecmaVersion: 'latest',
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        URL: 'readonly',
+        require: 'readonly',
+        module: 'readonly',
+        exports: 'readonly',
+      },
     },
     rules: {
-      "prettier/prettier": "error",
-      "@typescript-eslint/no-unused-vars": "warn",
-      "react/react-in-jsx-scope": "off",
-      quotes: ["off"],
-      "semi": ["off"],
+      'no-undef': 'error',
+      'no-unused-vars': 'warn',
     },
   },
 ];

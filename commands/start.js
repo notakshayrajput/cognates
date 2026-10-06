@@ -10,6 +10,12 @@ import open from "open";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = 2410;
+const uiIndex = path.join(__dirname, "../ui/dist/index.html");
+
+function localeFileName(value) {
+  if (!/^[A-Za-z0-9_-]+(?:\.json)?$/.test(value)) return null;
+  return value.endsWith('.json') ? value : `${value}.json`;
+}
 
 // Serve React UI
 app.use(express.static(path.join(__dirname, "../ui/dist")));
@@ -53,14 +59,14 @@ app.get("/api/config", async (req, res) => {
   try {
     const config = await getConfigAsync();
     res.json(config);
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to retrieve config" });
   }
 });
 app.get("/api/cultureInfo", (req, res) => {
   try {
     res.json({ success: true, cultureInfoList });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to retrieve cultureInfo" });
   }
 });
@@ -96,7 +102,9 @@ app.get("/api/locales", async (req, res) => {
 app.get("/api/locale/:filePath", async (req, res) => {
   try {
     const config = await getConfigAsync();
-    const filePath = path.join(config.localeDir, req.params.filePath);
+    const fileName = localeFileName(req.params.filePath);
+    if (!fileName) return res.status(400).json({ error: "Invalid locale filename" });
+    const filePath = path.resolve(config.localeDir, fileName);
 
     if (fs.existsSync(filePath)) {
       return res.json(JSON.parse(fs.readFileSync(filePath, "utf8")));
@@ -157,9 +165,9 @@ app.put("/api/locale/:filePath", async (req, res) => {
       return res.status(400).json({ error: "Invalid or missing 'filePath' parameter" });
     }
 
-    const resolvedFilePath = filePath.includes('/')
-      ? path.join(config.localeDir, filePath)
-      : path.join(config.localeDir, `${filePath}.json`);
+    const fileName = localeFileName(filePath);
+    if (!fileName) return res.status(400).json({ error: "Invalid locale filename" });
+    const resolvedFilePath = path.resolve(config.localeDir, fileName);
 
     if (!fs.existsSync(resolvedFilePath)) {
       return res.status(404).json({ error: "Locale file not found" });
@@ -291,16 +299,21 @@ app.post("/api/locale/generateType", async (req, res) => {
 });
 
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../ui/dist/index.html"));
+  res.sendFile(uiIndex);
 });
 
 export async function startCommand() {
-  var config = await getConfigAsync();
-  var port = config.port || PORT;
+  const config = await getConfigAsync();
+  const port = config.port || PORT;
+  if (!fs.existsSync(uiIndex)) {
+    throw new Error('Cognates UI is missing from this package. Reinstall Cognates or rebuild it.');
+  }
   console.log("Starting Cognates UI...");
-  app.listen(port, () => {
-    const url = `http://localhost:${port}`;
+  app.listen(port, '127.0.0.1', () => {
+    const url = `http://127.0.0.1:${port}`;
     console.log(`🚀 Cognates UI running at ${url}`);
-    open(url);
+    open(url).catch(() => {
+      console.log(`Open ${url} in your browser.`);
+    });
   });
 }

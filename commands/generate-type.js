@@ -6,5 +6,6 @@ export async function generateTypeCommand() {
     console.log("Type file generated successfully.");
   } catch (error) {
     console.error("Failed to generate type file:", error);
+    process.exitCode = 1;
   }
 }

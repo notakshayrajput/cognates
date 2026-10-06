@@ -1,22 +1,47 @@
 {
   "name": "cognates",
   "version": "1.0.0",
-  "description": "Cognates is a lightweight and developer-friendly npm package for localizing strings in React applications. It simplifies internationalization (i18n) by providing an easy-to-use API for managing translations, supporting multiple languages, and enhancing user experience with seamless locale switching.",
+  "description": "CLI and local browser editor for managing JSON translations and checking locale files.",
   "main": "index.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
-      "require": "./index.js"
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      },
+      "require": {
+        "types": "./index.d.cts",
+        "default": "./index.cjs"
+      }
     }
   },
+  "files": [
+    "bin/",
+    "commands/",
+    "lib/",
+    "example/",
+    "ui/dist/",
+    "defineConfig.js",
+    "index.js",
+    "index.cjs",
+    "index.d.ts",
+    "index.d.cts",
+    "scripts/prepare-package.mjs",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "dev": "cd \"ui\" && npm run dev",
-    "build": "cd \"ui\" && npm run build",
+    "build": "npm run build --prefix ui",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit --module nodenext --moduleResolution nodenext --target es2022 type-tests/esm.mts type-tests/commonjs.cts",
+    "prepack": "node scripts/prepare-package.mjs",
+    "prepublishOnly": "npm test && npm run lint && npm run typecheck",
     "install:local": "node scripts/install-local.mjs",
     "start": "cd \"Test Environment\" && npx cognates start",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
+    "lint": "eslint . --ext .js,.cjs,.mjs",
+    "lint:fix": "eslint . --ext .js,.cjs,.mjs --fix"
   },
   "bin": {
     "cognates": "./bin/cognates.js"
@@ -26,9 +51,12 @@
     "type": "git",
     "url": "git+https://github.com/notakshayrajput/cognates.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["i18n", "localization", "translations", "locale", "cli", "json"],
+  "author": "Akshay Rajput",
   "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "bugs": {
     "url": "https://github.com/notakshayrajput/cognates/issues"
   },

@@ -5,7 +5,7 @@ export default defineConfig({
     autoDetectLanguage: true,
     source: 'src/',
     port: 2410,
-    localeDir: '/cognates/',
+    localeDir: 'cognates/',
     excludePaths: ['/assets/*'],
 });
 /*
@@ -17,7 +17,7 @@ module.exports = defineConfig({
     autoDetectLanguage: true,
     source: 'src',
     port: 2410,
-    localeDir: '/cognates',
+    localeDir: 'cognates/',
     excludePaths: ['/assets/*'],
 });
 */

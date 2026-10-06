@@ -1,8 +1,8 @@
 import fs from 'fs'
 import path from 'path'
-import { pathToFileURL, fileURLToPath } from 'url'
-import readline from 'readline'
-import { getConfigAsync,getConfigPath,loadConfigAsync,detectModule,updateConfigAsync } from '../lib/util.js'
+import { fileURLToPath } from 'url'
+import readline from 'node:readline/promises'
+import { getConfigAsync,getConfigPath,loadConfigAsync,updateConfigAsync } from '../lib/util.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -21,28 +21,21 @@ const defaultConfig = {
 export async function setupCommand() {
   const configPath =getConfigPath();
 
-  let isModule = detectModule();
-
   if (!fs.existsSync(configPath)) {
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
     });
 
-    rl.question('No config file found. Create a default one? (Y/n): ', async (answer) => {
-      rl.close();
-      
-      if (answer.toLowerCase() === 'y' || answer === '') {
-        await updateConfigAsync(defaultConfig);
-        console.log(`✅ Created ${path.basename(configPath)}`);
-      } else {
-        console.log(`❌ No config file found. Please create one using the example at: ${exampleConfigPath}`);
-        return; // Stop execution if the user does not want to create a config
-      }
-
-      //  Only proceed after ensuring the config file exists
-      await continueSetup();
-    });
+    const answer = await rl.question('No config file found. Create a default one? (Y/n): ');
+    rl.close();
+    if (answer.toLowerCase() !== 'y' && answer !== '') {
+      console.log(`No config file found. Please create one using the example at: ${exampleConfigPath}`);
+      return;
+    }
+    await updateConfigAsync(defaultConfig);
+    console.log(`✅ Created ${path.basename(configPath)}`);
+    await continueSetup();
   } else {
     console.log('♻️ Cognates config already exists.');
     await continueSetup();

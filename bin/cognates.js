@@ -5,27 +5,26 @@ import { setupCommand } from "../commands/setup.js";
 import { startCommand } from "../commands/start.js";
 import { generateTypeCommand } from "../commands/generate-type.js";
 import { checkCommand } from "../commands/check.js";
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const packageInfo = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'));
+program.name('cognates').version(packageInfo.version);
 
 program
   .command("setup")
   .description("Setup Cognates in your app.")
-  .action(() => {
-    setupCommand();
-  });
+  .action(setupCommand);
 
-  program
+program
   .command("start")
   .description("Launch Cognates UI")
-  .action(() => {
-    startCommand();
-  });
+  .action(startCommand);
 
-  program
-    .command("generate-type")
-    .description("Generates a type file for your locales using the default language")
-    .action(() => {
-      generateTypeCommand();
-    });
+program
+  .command("generate-type")
+  .description("Generates a type file for your locales using the default language")
+  .action(generateTypeCommand);
 
 program
   .command("check")
@@ -33,4 +32,7 @@ program
   .option("--strict", "Exit with an error if any locale issues are found")
   .action(checkCommand);
 
-program.parse(process.argv);
+program.parseAsync(process.argv).catch(error => {
+  console.error(`Cognates failed: ${error.message}`);
+  process.exitCode = 1;
+});
